@@ -1,0 +1,174 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Inter', 'Inter Fallback';
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-muted: var(--brand-muted);
+  --color-cost: var(--cost);
+  --color-sale: var(--sale);
+  --color-profit: var(--profit);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+/* ─── DARK THEME (padrão) ─────────────────────────────────── */
+:root {
+  color-scheme: dark;
+
+  --background:   oklch(0.12 0.008 240);
+  --foreground:   oklch(0.94 0.005 240);
+
+  --card:         oklch(0.16 0.010 240);
+  --card-foreground: oklch(0.94 0.005 240);
+
+  --popover:      oklch(0.16 0.010 240);
+  --popover-foreground: oklch(0.94 0.005 240);
+
+  /* Azul ciano — identidade da marca */
+  --primary:      oklch(0.65 0.18 210);
+  --primary-foreground: oklch(0.10 0.005 240);
+
+  --secondary:    oklch(0.22 0.012 240);
+  --secondary-foreground: oklch(0.85 0.005 240);
+
+  --muted:        oklch(0.20 0.010 240);
+  --muted-foreground: oklch(0.55 0.008 240);
+
+  --accent:       oklch(0.22 0.012 240);
+  --accent-foreground: oklch(0.94 0.005 240);
+
+  --destructive:  oklch(0.65 0.22 25);
+
+  --border:       oklch(0.28 0.010 240);
+  --input:        oklch(0.22 0.012 240);
+  --ring:         oklch(0.65 0.18 210);
+
+  --radius: 0.5rem;
+
+  /* Tokens de negócio */
+  --brand:        oklch(0.65 0.18 210);
+  --brand-foreground: oklch(0.10 0.005 240);
+  --brand-muted:  oklch(0.20 0.05 210);
+  --cost:         oklch(0.72 0.18 55);    /* âmbar — modo custo */
+  --sale:         oklch(0.65 0.18 210);   /* ciano — modo venda */
+  --profit:       oklch(0.72 0.18 142);   /* verde — lucro */
+
+  /* Sidebar */
+  --sidebar:      oklch(0.14 0.010 240);
+  --sidebar-foreground: oklch(0.85 0.005 240);
+  --sidebar-primary: oklch(0.65 0.18 210);
+  --sidebar-primary-foreground: oklch(0.10 0.005 240);
+  --sidebar-accent: oklch(0.20 0.012 240);
+  --sidebar-accent-foreground: oklch(0.85 0.005 240);
+  --sidebar-border: oklch(0.22 0.010 240);
+  --sidebar-ring: oklch(0.65 0.18 210);
+}
+
+/* ─── LIGHT THEME ─────────────────────────────────────────── */
+.light {
+  color-scheme: light;
+
+  --background:   oklch(0.97 0.003 240);
+  --foreground:   oklch(0.15 0.010 240);
+
+  --card:         oklch(1.00 0 0);
+  --card-foreground: oklch(0.15 0.010 240);
+
+  --popover:      oklch(1.00 0 0);
+  --popover-foreground: oklch(0.15 0.010 240);
+
+  --primary:      oklch(0.52 0.20 210);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary:    oklch(0.92 0.005 240);
+  --secondary-foreground: oklch(0.20 0.010 240);
+
+  --muted:        oklch(0.94 0.003 240);
+  --muted-foreground: oklch(0.50 0.008 240);
+
+  --accent:       oklch(0.92 0.005 240);
+  --accent-foreground: oklch(0.20 0.010 240);
+
+  --destructive:  oklch(0.58 0.22 25);
+
+  --border:       oklch(0.88 0.005 240);
+  --input:        oklch(0.92 0.005 240);
+  --ring:         oklch(0.52 0.20 210);
+
+  --brand:        oklch(0.52 0.20 210);
+  --brand-foreground: oklch(0.99 0 0);
+  --brand-muted:  oklch(0.92 0.06 210);
+  --cost:         oklch(0.60 0.18 55);
+  --sale:         oklch(0.52 0.20 210);
+  --profit:       oklch(0.55 0.18 142);
+
+  --sidebar:      oklch(0.99 0 0);
+  --sidebar-foreground: oklch(0.20 0.010 240);
+  --sidebar-primary: oklch(0.52 0.20 210);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.94 0.003 240);
+  --sidebar-accent-foreground: oklch(0.20 0.010 240);
+  --sidebar-border: oklch(0.88 0.005 240);
+  --sidebar-ring: oklch(0.52 0.20 210);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  /* Impede o "pull-to-refresh" / bounce atrapalhar a rolagem interna no mobile */
+  html, body {
+    overscroll-behavior-y: none;
+  }
+}
+
+/* ─── SAFE AREAS (notch superior + barra de gestos inferior no celular) ─── */
+@layer utilities {
+  .pt-safe   { padding-top: env(safe-area-inset-top); }
+  .pb-safe   { padding-bottom: env(safe-area-inset-bottom); }
+  .pl-safe   { padding-left: env(safe-area-inset-left); }
+  .pr-safe   { padding-right: env(safe-area-inset-right); }
+  /* Margem/altura que somam a safe area a um valor base */
+  .h-nav-safe { height: calc(4rem + env(safe-area-inset-bottom)); }
+  .top-safe   { top: calc(1rem + env(safe-area-inset-top)); }
+}
