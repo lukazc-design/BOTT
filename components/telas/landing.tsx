@@ -126,7 +126,7 @@ export function Landing({ onEntrar }: LandingProps) {
       <div className="mt-auto px-4 pb-8">
         <div className="max-w-lg mx-auto flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <Wifi size={12} />
-          <span>Requer Ollama rodando no seu PC com modelo qwen2.5:14b ou llama3</span>
+          <span>Requer Ollama rodando no seu PC com modelo qwen2.5:7b ou llama3</span>
         </div>
       </div>
 

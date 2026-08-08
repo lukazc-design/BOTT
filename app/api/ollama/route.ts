@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
 
   // URL do Ollama sempre vem do servidor (centralizado no PC do dono)
   const url = process.env.OLLAMA_URL ?? 'http://localhost:11434'
-  const mdl = model ?? 'qwen2.5:14b'
+  const mdl = model ?? 'qwen2.5:7b'
 
   const SYSTEM = `Você é um assistente especializado em orçamentos de instalação de ar condicionado e refrigeração.
 Seu trabalho é interpretar o que o técnico descreveu e extrair as informações para gerar um orçamento.

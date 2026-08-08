@@ -262,7 +262,7 @@ export async function POST(req: NextRequest) {
   }
 
   const url = process.env.OLLAMA_URL ?? 'http://localhost:11434'
-  const mdl = model ?? 'qwen2.5:14b'
+  const mdl = model ?? 'qwen2.5:7b'
 
   // Contexto do orçamento atual (para a IA saber o que alterar)
   const temEquip = estadoAtual && estadoAtual.equipamentos.length > 0

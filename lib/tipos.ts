@@ -141,7 +141,7 @@ export const PERFIL_PADRAO: PerfilTecnico = {
   layoutOrcamento: 'classico',
   corPrimaria: '#0ea5e9',
   ollamaUrl: 'http://localhost:11434',
-  ollamaModel: 'qwen2.5:14b',
+  ollamaModel: 'qwen2.5:7b',
   validadeOrcamentoDias: 15,
   observacoesPadrao: 'Orçamento válido por {validade} dias. Pagamento: 50% na aprovação e 50% na conclusão.',
   // Kit padrão de materiais por serviço (IDs dos materiais abaixo). O técnico ajusta no perfil.
