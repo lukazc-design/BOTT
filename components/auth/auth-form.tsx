@@ -42,11 +42,11 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     document.getElementById('form-acesso')?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // IDs de exemplo — substitua pelos seus videos reais apos publicar
+  // Posts do Instagram exibidos na tela inicial (marketing)
   const videos = [
-    { id: 'dQw4w9WgXcQ', titulo: 'Como criar um orçamento em 1 minuto' },
-    { id: 'dQw4w9WgXcQ', titulo: 'IA montando orçamento completo' },
-    { id: 'dQw4w9WgXcQ', titulo: 'Geração de PDF com sua marca' },
+    { id: 'DbsXWOntq8T', titulo: 'Como criar um orçamento em 1 minuto' },
+    { id: 'DbsXKWlNtid', titulo: 'IA montando orçamento completo' },
+    { id: 'Dbtfr1hPKm0', titulo: 'Geração de PDF com sua marca' },
   ]
 
   const features = [
@@ -175,12 +175,13 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {videos.map((v, i) => (
               <div key={i} className="space-y-2">
-                <div className="relative w-full overflow-hidden rounded-xl bg-muted aspect-video">
+                <div className="relative w-full overflow-hidden rounded-xl bg-muted aspect-[9/16]">
                   <iframe
-                    src={`https://www.youtube.com/embed/${v.id}`}
+                    src={`https://www.instagram.com/p/${v.id}/embed`}
                     title={v.titulo}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
+                    scrolling="no"
                     className="absolute inset-0 w-full h-full border-0"
                   />
                 </div>
