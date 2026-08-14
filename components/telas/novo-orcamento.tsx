@@ -191,7 +191,7 @@ function iconeItem(it: { descricao: string; categoria: string }, size = 14) {
 }
 
 // ─── INDICADOR IA LOCAL ───────────────────────────────────────────────────────
-function IndicadorIALocal({ online, model, url }: { online: boolean; model: string; url: string }) {
+function IndicadorIALocal({ online, model, url, nuvem }: { online: boolean; model: string; url: string; nuvem?: boolean }) {
   const [aberto, setAberto] = useState(false)
   return (
     <div className="relative">
@@ -218,17 +218,17 @@ function IndicadorIALocal({ online, model, url }: { online: boolean; model: stri
                 <Cpu size={16} className={online ? 'text-green-400' : 'text-destructive'} />
               </div>
               <div>
-                <p className="font-semibold text-sm">IA rodando no seu PC</p>
-                <p className="text-muted-foreground text-[10px]">Dados 100% locais, sem internet</p>
+                <p className="font-semibold text-sm">{nuvem ? 'IA na nuvem (Gemini)' : 'IA rodando no seu PC'}</p>
+                <p className="text-muted-foreground text-[10px]">{nuvem ? 'Rápida e sempre online' : 'Dados 100% locais, sem internet'}</p>
               </div>
             </div>
             <div className="rounded-xl bg-background border border-border p-3 space-y-2">
               <Row label="Status" valor={online ? '🟢 Online' : '🔴 Offline'} />
               <Row label="Modelo" valor={model} mono />
-              <Row label="Servidor" valor={url.replace('https://', '').slice(0, 30) + '...'} mono />
+              <Row label="Servidor" valor={nuvem ? 'Vercel AI Gateway' : url.replace('https://', '').slice(0, 30) + '...'} mono />
             </div>
             <p className="text-[10px] text-muted-foreground text-center">
-              Seus dados nunca saem do seu computador
+              {nuvem ? 'Funciona sem depender do seu PC ligado' : 'Seus dados nunca saem do seu computador'}
             </p>
           </div>
         </>
@@ -762,6 +762,9 @@ export function NovoOrcamento({
   edicaoNonce?: number
 }) {
   const perfil = carregarPerfil()
+  // Provedor de IA: 'nuvem' (Gemini, padrão) ou 'local' (Ollama no PC)
+  const provedor = perfil.provedorIA ?? 'nuvem'
+  const isNuvem = provedor === 'nuvem'
 
   const MENSAGEM_INICIAL: MensagemChat = {
     role: 'assistant',
@@ -1123,10 +1126,10 @@ export function NovoOrcamento({
     if (!texto.trim()) return
 
     // Verifica status em tempo real antes de enviar (evita falsos negativos do cache)
-    let iaOnline = ollamaOnline
+    let iaOnline = isNuvem ? true : ollamaOnline
     if (!iaOnline) {
       try {
-        const check = await fetch('/api/ollama')
+        const check = await fetch(`/api/ollama?provedor=${provedor}`)
         const data = await check.json()
         iaOnline = data.online ?? false
       } catch {
@@ -1170,6 +1173,7 @@ export function NovoOrcamento({
         mensagem: texto,
         historico: historicoAPI.slice(0, -1),
         estadoAtual,
+        provedor,
       })
 
       // Tenta até 2 vezes com timeout de 60s cada
@@ -1356,7 +1360,12 @@ export function NovoOrcamento({
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <IndicadorIALocal online={ollamaOnline} model={perfil.ollamaModel} url={perfil.ollamaUrl} />
+          <IndicadorIALocal
+            online={isNuvem ? true : ollamaOnline}
+            model={isNuvem ? 'Gemini 2.5 Flash' : perfil.ollamaModel}
+            url={isNuvem ? 'Vercel AI Gateway' : perfil.ollamaUrl}
+            nuvem={isNuvem}
+          />
           {temOrcamento && (
             <Button
               onClick={() => setMostrarPreview(true)}
@@ -1443,7 +1452,7 @@ export function NovoOrcamento({
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
-                    <span className="text-xs text-muted-foreground ml-2 font-mono">{perfil.ollamaModel}</span>
+                    <span className="text-xs text-muted-foreground ml-2 font-mono">{isNuvem ? 'Gemini 2.5 Flash' : perfil.ollamaModel}</span>
                   </div>
                 </div>
               </div>

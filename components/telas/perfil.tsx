@@ -358,6 +358,42 @@ export function Perfil({ onOllamaStatus }: { onOllamaStatus?: (online: boolean) 
               className="text-sm resize-none h-20"
             />
           </div>
+
+          {/* ── Provedor de IA ──────────────────────────────────────────── */}
+          <div className="space-y-2 rounded-xl border border-border bg-card/50 p-4">
+            <Label className="text-xs font-semibold">Inteligência Artificial</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Escolha como a IA interpreta os pedidos. A opção na nuvem funciona para todos, sem precisar do seu PC ligado.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => atualizar('provedorIA', 'nuvem')}
+                className={cn(
+                  'rounded-lg border p-3 text-left transition-all',
+                  (perfil.provedorIA ?? 'nuvem') === 'nuvem'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-primary/50'
+                )}
+              >
+                <p className="text-sm font-medium">Nuvem (Gemini)</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Recomendado. Online 24h, rápido, sem túnel.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => atualizar('provedorIA', 'local')}
+                className={cn(
+                  'rounded-lg border p-3 text-left transition-all',
+                  perfil.provedorIA === 'local'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-primary/50'
+                )}
+              >
+                <p className="text-sm font-medium">Local (Ollama)</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Roda no seu PC via túnel. 100% offline e grátis.</p>
+              </button>
+            </div>
+          </div>
         </TabsContent>
 
         {/* ── Materiais ────────────────────────────────────────────────── */}

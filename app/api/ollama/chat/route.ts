@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { generateObject, jsonSchema } from 'ai'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300 // Vercel ajusta ao limite do plano automaticamente
@@ -238,6 +239,24 @@ interface MensagemChat {
   content: string
 }
 
+// Objeto que a IA devolve (mesmo formato do schema acima)
+interface AcaoIA {
+  acao: 'conversar' | 'atualizar_orcamento' | 'adicionar' | 'limpar' | 'perguntar'
+  mensagem: string
+  clienteNome?: string
+  clienteEndereco?: string
+  clienteTelefone?: string
+  equipamentos: unknown[]
+  itensExtras: unknown[]
+  observacoes?: string
+}
+
+// ── IA na nuvem (Vercel AI Gateway) ────────────────────────────────────────
+// Gemini Flash: rápido, barato e sempre online — NÃO depende do PC do dono.
+const GEMINI_MODEL = 'google/gemini-2.5-flash'
+// Reaproveita o MESMO schema JSON do Ollama para forçar saída estruturada.
+const SCHEMA_ACAO = jsonSchema<AcaoIA>(FORMATO_JSON as unknown as Parameters<typeof jsonSchema>[0])
+
 // Headers Cloudflare Tunnel + ngrok
 const CF_HEADERS: Record<string, string> = {
   'Content-Type': 'application/json',
@@ -248,10 +267,11 @@ const CF_HEADERS: Record<string, string> = {
 }
 
 export async function POST(req: NextRequest) {
-  const { mensagem, historico, model, estadoAtual } = await req.json() as {
+  const { mensagem, historico, model, estadoAtual, provedor } = await req.json() as {
     mensagem: string
     historico: MensagemChat[]
     model?: string
+    provedor?: 'nuvem' | 'local'
     estadoAtual?: {
       equipamentos: { indice: number; marca: string; tipo: string; btu: number; quantidade: number; ambiente: string; distanciaTubulacao: number; tensao: string }[]
       itensExtras?: { indice: number; descricao: string; quantidade: number; unidade: string; precoCusto: number; precoVenda: number; categoria: string }[]
@@ -291,8 +311,7 @@ export async function POST(req: NextRequest) {
       ].filter(Boolean).join('\n')
     : ''
 
-  const promptCompleto = [
-    SYSTEM_CHAT,
+  const promptUsuario = [
     contextoOrcamento,
     '',
     '--- HISTÓRICO DA CONVERSA ---',
@@ -300,7 +319,36 @@ export async function POST(req: NextRequest) {
     `Técnico: ${mensagem}`,
     'Assistente (responda preenchendo o JSON):',
   ].join('\n')
+  const promptCompleto = `${SYSTEM_CHAT}\n${promptUsuario}`
 
+  // ── IA NA NUVEM (Gemini Flash) — PADRÃO: funciona pra todos sem o PC ligado ──
+  const usarNuvem = provedor !== 'local'
+  if (usarNuvem) {
+    try {
+      const { object } = await generateObject({
+        model: GEMINI_MODEL,
+        schema: SCHEMA_ACAO,
+        system: SYSTEM_CHAT,
+        prompt: promptUsuario,
+        temperature: 0,
+      })
+      const acao = object as unknown as Record<string, unknown>
+      const mensagemVisivel = (acao.mensagem as string) || 'Feito.'
+      // Conversa ou pergunta: não altera o orçamento
+      if (acao.acao === 'conversar' || acao.acao === 'perguntar') {
+        return NextResponse.json({ texto: mensagemVisivel, acao: null, model: 'Gemini 2.5 Flash' })
+      }
+      return NextResponse.json({ texto: mensagemVisivel, acao, model: 'Gemini 2.5 Flash' })
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+      return NextResponse.json(
+        { erro: `Não foi possível conectar à IA na nuvem. Tente de novo em instantes. (${msg})` },
+        { status: 503 }
+      )
+    }
+  }
+
+  // ── IA LOCAL (Ollama no PC via túnel) — só quando provedor === 'local' ──────
   try {
     const resp = await fetch(`${url}/api/generate`, {
       method: 'POST',

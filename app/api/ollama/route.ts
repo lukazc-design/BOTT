@@ -113,9 +113,15 @@ Regras:
   }
 }
 
-// ─── STATUS DO OLLAMA ─────────────────────────────────────────────────────────
+// ─── STATUS DA IA ─────────────────────────────────────────────────────────────
 export async function GET(_req: NextRequest) {
-  // URL centralizada no servidor — nao depende do cliente
+  // IA na nuvem (Gemini) é o padrão: está sempre online, não depende do PC/túnel.
+  const provedor = new URL(_req.url).searchParams.get('provedor')
+  if (provedor !== 'local') {
+    return NextResponse.json({ online: true, nuvem: true, models: ['Gemini 2.5 Flash'], url: 'Vercel AI Gateway' })
+  }
+
+  // IA local (Ollama) — verifica o túnel/PC
   const url = process.env.OLLAMA_URL ?? 'http://localhost:11434'
   try {
     const resp = await fetch(`${url}/api/tags`, {

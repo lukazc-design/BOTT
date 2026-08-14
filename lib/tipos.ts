@@ -55,6 +55,9 @@ export interface PerfilTecnico {
   corPrimaria: string          // hex, ex: "#0ea5e9"
   ollamaUrl: string
   ollamaModel: string
+  // Provedor de IA: 'nuvem' = Gemini Flash online (padrão, funciona sem o PC ligado);
+  // 'local' = Ollama rodando no seu PC via túnel.
+  provedorIA?: 'nuvem' | 'local'
   materiais: PrecoMaterial[]
   servicos: PrecoServico[]
   // Kit de materiais padrão por categoria de serviço: lista de IDs de materiais
@@ -142,6 +145,7 @@ export const PERFIL_PADRAO: PerfilTecnico = {
   corPrimaria: '#0ea5e9',
   ollamaUrl: 'http://localhost:11434',
   ollamaModel: 'qwen2.5:7b',
+  provedorIA: 'nuvem',
   validadeOrcamentoDias: 15,
   observacoesPadrao: 'Orçamento válido por {validade} dias. Pagamento: 50% na aprovação e 50% na conclusão.',
   // Kit padrão de materiais por serviço (IDs dos materiais abaixo). O técnico ajusta no perfil.
