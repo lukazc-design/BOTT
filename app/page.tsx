@@ -12,7 +12,7 @@ import { Perfil } from '@/components/telas/perfil'
 import { Admin } from '@/components/telas/admin'
 import { BannerLicenca } from '@/components/auth/banner-licenca'
 import { confirmarCheckout } from '@/lib/actions/licenca'
-import { ehAdmin } from '@/lib/actions/admin'
+import { ehAdmin, registrarAcesso, pingAtividade } from '@/lib/actions/admin'
 import { Loader2, CheckCircle2 } from 'lucide-react'
 import type { EstadoChat } from '@/components/telas/novo-orcamento'
 import type { Orcamento } from '@/lib/tipos'
@@ -38,6 +38,18 @@ export default function Home() {
   useEffect(() => {
     if (!session?.user) { setIsAdmin(false); return }
     ehAdmin().then(setIsAdmin).catch(() => setIsAdmin(false))
+  }, [session?.user])
+
+  // Registra atividade: conta 1 acesso ao abrir e soma tempo de uso a cada 60s.
+  useEffect(() => {
+    if (!session?.user) return
+    registrarAcesso().catch(() => {})
+    const PASSO = 60
+    const interval = setInterval(() => {
+      // Só contabiliza tempo quando a aba está visível (uso real)
+      if (document.visibilityState === 'visible') pingAtividade(PASSO).catch(() => {})
+    }, PASSO * 1000)
+    return () => clearInterval(interval)
   }, [session?.user])
 
   // ── Retorno do checkout Stripe ───────────────────────────────────────────

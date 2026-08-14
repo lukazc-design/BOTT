@@ -92,6 +92,19 @@ export const technicianProfiles = pgTable('technician_profiles', {
   updatedAt: timestamp('updatedAt').notNull(),
 })
 
+// ─── OrçaFacil: Atividade e permissões do usuário (painel de admin) ─────────
+// Guarda flags de acesso/admin e métricas de uso (nº de acessos, tempo, último).
+
+export const userActivity = pgTable('user_activity', {
+  userId: text('userId').primaryKey(),
+  acessoLiberado: boolean('acessoLiberado').notNull().default(false), // acesso manual concedido pelo admin
+  isAdmin: boolean('isAdmin').notNull().default(false),                // promovido a administrador
+  acessos: integer('acessos').notNull().default(0),                    // quantas vezes abriu o sistema
+  tempoTotalSegundos: integer('tempoTotalSegundos').notNull().default(0), // tempo total de uso (heartbeat)
+  ultimoAcesso: timestamp('ultimoAcesso'),
+  createdAt: timestamp('createdAt').notNull(),
+})
+
 // ─── OrçaFacil: Registro de uso da IA (para o painel de custos) ─────────────
 // Cada chamada da IA na nuvem grava tokens consumidos, para estimar custo.
 

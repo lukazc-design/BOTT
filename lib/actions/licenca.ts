@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { licenses, orcamentos } from '@/lib/db/schema'
+import { licenses, orcamentos, userActivity, user } from '@/lib/db/schema'
 import { stripe, PLANOS, TRIAL_DIAS, limiteOrcamentos, type PlanoId } from '@/lib/stripe'
 import { and, eq, gte, sql } from 'drizzle-orm'
 import { headers } from 'next/headers'
@@ -73,6 +73,25 @@ export async function verificarAcesso(): Promise<{
     const licenca = await getLicenca()
     const agora = new Date()
     const usoMes = await getUsoMensal()
+
+    // Override do admin: acesso manual liberado ou usuário administrador → acesso ilimitado.
+    const userId = await getUserId()
+    const [ativ] = await db
+      .select({ acessoLiberado: userActivity.acessoLiberado, isAdmin: userActivity.isAdmin })
+      .from(userActivity)
+      .where(eq(userActivity.userId, userId))
+      .limit(1)
+    const [u] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId)).limit(1)
+    const emailAdmin = u?.email?.toLowerCase() === 'lucasj0@hotmail.com'
+    if (emailAdmin || ativ?.isAdmin || ativ?.acessoLiberado) {
+      return {
+        permitido: true,
+        status: 'active',
+        plano: (licenca.plano as PlanoId | null) ?? 'pro',
+        limiteMes: 999999,
+        usoMes,
+      }
+    }
 
     if (licenca.status === 'active') {
       const plano = (licenca.plano as PlanoId | null) ?? 'basico'
