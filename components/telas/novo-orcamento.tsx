@@ -1199,6 +1199,13 @@ export function NovoOrcamento({
       if (!resp) throw new Error('Sem resposta do servidor')
 
       const data = await resp.json()
+      // Bloqueio de licença: NÃO faz fallback local (evita burlar o limite)
+      if (resp.status === 402) {
+        const msgErro = data.erro ?? 'Assinatura necessária para usar a IA.'
+        setMensagens(prev => [...prev, { role: 'assistant', content: msgErro, timestamp: new Date() }])
+        setErro(msgErro)
+        return
+      }
       if (!resp.ok || data.erro) {
         const msgErro = data.erro ?? 'Erro ao processar com a IA.'
         // Mesmo com erro da IA, tenta parser local para não perder o orçamento

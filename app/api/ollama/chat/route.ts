@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateObject, jsonSchema } from 'ai'
+import { verificarAcesso } from '@/lib/actions/licenca'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300 // Vercel ajusta ao limite do plano automaticamente
@@ -155,7 +156,7 @@ RELAÇÕES ÚTEIS (regra de bolso — use como default se o técnico não der o 
 
 A "mensagem" deve ser uma frase curta (máx 2 linhas) confirmando o que você fez, em português informal de técnico.
 
-EXEMPLOS (estude estes casos — a saída sua deve seguir EXATAMENTE este padrão de raciocínio e formato):
+EXEMPLOS (estude estes casos — a saída sua deve seguir EXATAMENTE este padr��o de raciocínio e formato):
 
 Ex1 — cria dois equipamentos de potências diferentes + cliente na mesma fala:
 Fala: "orçamento pro seu joão, rua das flores 200, um split de 24 e outro de 12"
@@ -267,6 +268,18 @@ const CF_HEADERS: Record<string, string> = {
 }
 
 export async function POST(req: NextRequest) {
+  // ── PORTÃO DE LICENÇA ────────────────────────────────────────────────────
+  // A IA só responde para quem tem login + trial válido ou assinatura ativa.
+  // Isso garante que apenas usuários pagantes (ou em teste) consumam a IA,
+  // protegendo o custo do provedor na nuvem.
+  const acesso = await verificarAcesso()
+  if (!acesso.permitido) {
+    return NextResponse.json(
+      { erro: 'Seu teste grátis encerrou ou você não tem uma assinatura ativa. Escolha um plano para continuar usando a IA.' },
+      { status: 402 },
+    )
+  }
+
   const { mensagem, historico, model, estadoAtual, provedor } = await req.json() as {
     mensagem: string
     historico: MensagemChat[]
