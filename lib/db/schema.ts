@@ -92,6 +92,19 @@ export const technicianProfiles = pgTable('technician_profiles', {
   updatedAt: timestamp('updatedAt').notNull(),
 })
 
+// ─── OrçaFacil: Registro de uso da IA (para o painel de custos) ─────────────
+// Cada chamada da IA na nuvem grava tokens consumidos, para estimar custo.
+
+export const aiUsage = pgTable('ai_usage', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  model: text('model').notNull().default('google/gemini-2.5-flash'),
+  provedor: text('provedor').notNull().default('nuvem'), // nuvem | local
+  inputTokens: integer('inputTokens').notNull().default(0),
+  outputTokens: integer('outputTokens').notNull().default(0),
+  createdAt: timestamp('createdAt').notNull(),
+})
+
 // ─── OrçaFacil: Orcamentos ──────────────────────────────────────────────────
 
 export const orcamentos = pgTable('orcamentos', {

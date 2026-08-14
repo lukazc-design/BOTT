@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
-  Thermometer, FileText, History, Settings, LayoutGrid,
+  Thermometer, FileText, History, Settings, LayoutGrid, ShieldCheck,
   Wifi, WifiOff, Menu, X, ChevronRight, AlertCircle, CheckCircle2, Loader2, RefreshCw, LogOut,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { carregarPerfil } from '@/lib/storage'
 import { signOut } from '@/lib/auth-client'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'perfil'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'perfil' | 'admin'
 
 interface SidebarProps {
   paginaAtiva: Pagina
@@ -19,6 +19,7 @@ interface SidebarProps {
   ollamaOnline: boolean
   ollamaErro?: string
   ollamaUrl?: string
+  isAdmin?: boolean
 }
 
 interface DiagResult {
@@ -36,7 +37,7 @@ const NAV = [
   { id: 'perfil' as Pagina,          label: 'Meu Perfil',     icon: Settings     },
 ]
 
-export function Sidebar({ paginaAtiva, onNavegar, ollamaOnline, ollamaErro, ollamaUrl }: SidebarProps) {
+export function Sidebar({ paginaAtiva, onNavegar, ollamaOnline, ollamaErro, ollamaUrl, isAdmin }: SidebarProps) {
   const router = useRouter()
   const [aberto, setAberto] = useState(false)
   const [nomeEmpresa, setNomeEmpresa] = useState('')
@@ -120,7 +121,7 @@ export function Sidebar({ paginaAtiva, onNavegar, ollamaOnline, ollamaErro, olla
 
         {/* Nav */}
         <nav className="flex-1 p-3 flex flex-col gap-1">
-          {NAV.map(item => {
+          {(isAdmin ? [...NAV, { id: 'admin' as Pagina, label: 'Admin', icon: ShieldCheck }] : NAV).map(item => {
             const Icon = item.icon
             const ativo = paginaAtiva === item.id
             return (

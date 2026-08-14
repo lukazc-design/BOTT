@@ -9,13 +9,15 @@ import { Dashboard } from '@/components/telas/dashboard'
 import { NovoOrcamento } from '@/components/telas/novo-orcamento'
 import { Historico } from '@/components/telas/historico'
 import { Perfil } from '@/components/telas/perfil'
+import { Admin } from '@/components/telas/admin'
 import { BannerLicenca } from '@/components/auth/banner-licenca'
 import { confirmarCheckout } from '@/lib/actions/licenca'
+import { ehAdmin } from '@/lib/actions/admin'
 import { Loader2, CheckCircle2 } from 'lucide-react'
 import type { EstadoChat } from '@/components/telas/novo-orcamento'
 import type { Orcamento } from '@/lib/tipos'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'perfil'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'perfil' | 'admin'
 
 export default function Home() {
   const { data: session, isPending } = useSession()
@@ -29,7 +31,14 @@ export default function Home() {
   const [abrirOrcId, setAbrirOrcId] = useState<string | null>(null)
   const [abrirOrcNonce, setAbrirOrcNonce] = useState(0)
   const [avisoPagamento, setAvisoPagamento] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const confirmandoRef = useRef(false)
+
+  // Verifica se o usuário logado é administrador (libera a aba Admin)
+  useEffect(() => {
+    if (!session?.user) { setIsAdmin(false); return }
+    ehAdmin().then(setIsAdmin).catch(() => setIsAdmin(false))
+  }, [session?.user])
 
   // ── Retorno do checkout Stripe ───────────────────────────────────────────
   // Ativa a licenca no retorno (dispensa webhook). Confirma a sessao paga no servidor.
@@ -67,10 +76,10 @@ export default function Home() {
   // ── Memória de rolagem por aba ──────────────────────────────────────────
   // Cada aba lembra onde o usuário parou. Aba nunca aberta começa no topo.
   const scrollRefs = useRef<Record<Pagina, HTMLDivElement | null>>({
-    dashboard: null, 'novo-orcamento': null, historico: null, perfil: null,
+    dashboard: null, 'novo-orcamento': null, historico: null, perfil: null, admin: null,
   })
   const scrollMem = useRef<Record<Pagina, number>>({
-    dashboard: 0, 'novo-orcamento': 0, historico: 0, perfil: 0,
+    dashboard: 0, 'novo-orcamento': 0, historico: 0, perfil: 0, admin: 0,
   })
   const visitados = useRef<Set<Pagina>>(new Set())
 
@@ -155,7 +164,7 @@ export default function Home() {
 
   return (
     <div className="flex h-[100dvh] bg-background overflow-hidden">
-      <Sidebar paginaAtiva={pagina} onNavegar={navegar} ollamaOnline={ollamaOnline} />
+      <Sidebar paginaAtiva={pagina} onNavegar={navegar} ollamaOnline={ollamaOnline} isAdmin={isAdmin} />
 
       <main className="flex-1 overflow-hidden flex flex-col pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] md:pt-0 md:pb-0">
         {/* Aviso de retorno do pagamento */}
@@ -206,6 +215,15 @@ export default function Home() {
         >
           <Perfil onOllamaStatus={setOllamaOnline} />
         </div>
+        {isAdmin && (
+          <div
+            ref={el => { scrollRefs.current.admin = el }}
+            onScroll={() => salvarScroll('admin')}
+            className={pagina === 'admin' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+          >
+            <Admin />
+          </div>
+        )}
       </main>
 
       <NavBottom paginaAtiva={pagina} onNavegar={navegar} />
