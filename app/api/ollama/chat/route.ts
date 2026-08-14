@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateObject, jsonSchema } from 'ai'
 import { verificarAcesso } from '@/lib/actions/licenca'
+import { auth } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { aiUsage } from '@/lib/db/schema'
+import { headers } from 'next/headers'
+import { randomUUID } from 'crypto'
 
 export const runtime = 'nodejs'
+
+// Grava o consumo de tokens de uma chamada de IA (não quebra a resposta se falhar)
+async function registrarUso(userId: string, model: string, inTok: number, outTok: number) {
+  try {
+    await db.insert(aiUsage).values({
+      id: randomUUID(),
+      userId,
+      model,
+      provedor: 'nuvem',
+      inputTokens: inTok || 0,
+      outputTokens: outTok || 0,
+      createdAt: new Date(),
+    })
+  } catch {
+    // registro de uso é best-effort — nunca impede a IA de responder
+  }
+}
 export const maxDuration = 300 // Vercel ajusta ao limite do plano automaticamente
 
 // Sistema de prompt — agora o modelo é OBRIGADO a retornar JSON pelo schema (format)
@@ -279,6 +301,9 @@ export async function POST(req: NextRequest) {
       { status: 402 },
     )
   }
+  // Usuário autenticado (para registrar o consumo de IA no painel de custos)
+  const sessao = await auth.api.getSession({ headers: await headers() })
+  const userId = sessao?.user?.id ?? 'desconhecido'
 
   const { mensagem, historico, model, estadoAtual, provedor } = await req.json() as {
     mensagem: string
@@ -338,13 +363,15 @@ export async function POST(req: NextRequest) {
   const usarNuvem = provedor !== 'local'
   if (usarNuvem) {
     try {
-      const { object } = await generateObject({
+      const { object, usage } = await generateObject({
         model: GEMINI_MODEL,
         schema: SCHEMA_ACAO,
         system: SYSTEM_CHAT,
         prompt: promptUsuario,
         temperature: 0,
       })
+      // Registra o consumo de tokens para o painel de custos (não bloqueia a resposta)
+      await registrarUso(userId, GEMINI_MODEL, usage?.inputTokens ?? 0, usage?.outputTokens ?? 0)
       const acao = object as unknown as Record<string, unknown>
       const mensagemVisivel = (acao.mensagem as string) || 'Feito.'
       // Conversa ou pergunta: não altera o orçamento
