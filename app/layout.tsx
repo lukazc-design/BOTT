@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -26,7 +27,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR" className="bg-background dark">
-      <body className={`${inter.className} antialiased bg-background text-foreground`}>{children}</body>
+      <body className={`${inter.className} antialiased bg-background text-foreground`}>
+        {children}
+        <Analytics />
+      </body>
     </html>
   )
 }
