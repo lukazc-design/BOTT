@@ -65,6 +65,9 @@ export function FluxoCaixa({ ativo }: { ativo?: boolean }) {
   const [salvando, setSalvando] = useState(false)
   // valor no input é digitado em reais; converto para centavos ao salvar
   const [valorReais, setValorReais] = useState('')
+  // filtros da lista de lançamentos
+  const [filtroTipo, setFiltroTipo] = useState<'todos' | 'receita' | 'despesa'>('todos')
+  const [filtroCategoria, setFiltroCategoria] = useState<string>('todas')
 
   const recarregar = useCallback(async () => {
     setCarregando(true)
@@ -148,6 +151,26 @@ export function FluxoCaixa({ ativo }: { ativo?: boolean }) {
 
   const temMovimento = dadosDiarios.length > 0
 
+  // Categorias presentes nos lançamentos do mês (para o filtro)
+  const categoriasDisponiveis = useMemo(() => {
+    const set = new Set<string>()
+    lista.forEach(l => { if (filtroTipo === 'todos' || l.tipo === filtroTipo) set.add(l.categoria) })
+    return Array.from(set).sort()
+  }, [lista, filtroTipo])
+
+  // Lançamentos após aplicar os filtros de tipo e categoria
+  const listaFiltrada = useMemo(() => {
+    return lista.filter(l =>
+      (filtroTipo === 'todos' || l.tipo === filtroTipo) &&
+      (filtroCategoria === 'todas' || l.categoria === filtroCategoria)
+    )
+  }, [lista, filtroTipo, filtroCategoria])
+
+  // Soma dos lançamentos filtrados (para mostrar o total do recorte)
+  const totalFiltrado = useMemo(() =>
+    listaFiltrada.reduce((s, l) => s + (l.tipo === 'receita' ? l.valor : -l.valor), 0),
+  [listaFiltrada])
+
   const ehMesAtual = ano === hoje.getFullYear() && mes === hoje.getMonth()
 
   return (
@@ -218,7 +241,16 @@ export function FluxoCaixa({ ativo }: { ativo?: boolean }) {
                     <XAxis dataKey="dia" tickLine={false} axisLine={false} tickMargin={8} className="text-xs" interval="preserveStartEnd" />
                     <YAxis tickLine={false} axisLine={false} width={44}
                       tickFormatter={(v: number) => v >= 1000 ? `R$${Math.round(v / 1000)}k` : `R$${v}`} className="text-xs" />
-                    <ChartTooltip content={<ChartTooltipContent labelFormatter={(l) => `Dia ${l}`} formatter={(v) => fmtMoeda(Number(v) * 100)} />} />
+                    <ChartTooltip content={<ChartTooltipContent
+                      labelFormatter={(l) => `Dia ${l}`}
+                      formatter={(value, name, item) => (
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: item?.color }} />
+                          <span className="text-muted-foreground flex-1">{chartConfig[name as keyof typeof chartConfig]?.label ?? name}</span>
+                          <span className="font-mono font-medium tabular-nums text-foreground">{fmtMoeda(Number(value) * 100)}</span>
+                        </div>
+                      )}
+                    />} />
                     <Bar dataKey="receitas" fill="var(--color-receitas)" radius={[3, 3, 0, 0]} maxBarSize={26} />
                     <Bar dataKey="despesas" fill="var(--color-despesas)" radius={[3, 3, 0, 0]} maxBarSize={26} />
                   </BarChart>
@@ -241,7 +273,16 @@ export function FluxoCaixa({ ativo }: { ativo?: boolean }) {
                 <div className="flex flex-col sm:flex-row items-center gap-4">
                   <ChartContainer config={{}} className="h-[180px] w-[180px] shrink-0 aspect-square">
                     <PieChart>
-                      <ChartTooltip content={<ChartTooltipContent nameKey="nome" formatter={(v) => fmtMoeda(Number(v) * 100)} />} />
+                      <ChartTooltip content={<ChartTooltipContent
+                        nameKey="nome"
+                        formatter={(value, _name, item) => (
+                          <div className="flex items-center gap-2 w-full">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item?.payload?.cor }} />
+                            <span className="text-muted-foreground capitalize flex-1">{item?.payload?.nome}</span>
+                            <span className="font-mono font-medium tabular-nums text-foreground">{fmtMoeda(Number(value) * 100)}</span>
+                          </div>
+                        )}
+                      />} />
                       <Pie data={dadosPizza} dataKey="valor" nameKey="nome" innerRadius={45} outerRadius={80} paddingAngle={2} strokeWidth={2}>
                         {dadosPizza.map((d) => <Cell key={d.nome} fill={d.cor} stroke="var(--card)" />)}
                       </Pie>
@@ -277,18 +318,72 @@ export function FluxoCaixa({ ativo }: { ativo?: boolean }) {
 
             {/* Lista de lançamentos */}
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                Lançamentos ({lista.length})
-              </p>
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Lançamentos ({listaFiltrada.length})
+                </p>
+                {/* Legenda de cores */}
+                <div className="flex items-center gap-3 text-[11px]">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-profit" /> Entradas</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-destructive" /> Saídas</span>
+                </div>
+              </div>
+
+              {/* Filtros: tipo (chips) + categoria (select) */}
+              {lista.length > 0 && (
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-0.5">
+                    {([
+                      { v: 'todos', label: 'Todos' },
+                      { v: 'receita', label: 'Entradas' },
+                      { v: 'despesa', label: 'Saídas' },
+                    ] as const).map(op => (
+                      <button
+                        key={op.v}
+                        onClick={() => { setFiltroTipo(op.v); setFiltroCategoria('todas') }}
+                        className={cn(
+                          'px-2.5 h-7 rounded-md text-xs font-medium transition-colors',
+                          filtroTipo === op.v
+                            ? op.v === 'receita' ? 'bg-profit text-white'
+                              : op.v === 'despesa' ? 'bg-destructive text-white'
+                              : 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent'
+                        )}
+                      >
+                        {op.label}
+                      </button>
+                    ))}
+                  </div>
+                  <Select value={filtroCategoria} onValueChange={v => setFiltroCategoria(v ?? 'todas')}>
+                    <SelectTrigger className="h-8 w-auto min-w-[130px] text-xs"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas as categorias</SelectItem>
+                      {categoriasDisponiveis.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {(filtroTipo !== 'todos' || filtroCategoria !== 'todas') && (
+                    <span className={cn('text-xs font-semibold tabular-nums ml-auto', totalFiltrado >= 0 ? 'text-profit' : 'text-destructive')}>
+                      {totalFiltrado >= 0 ? '+' : '-'}{fmtMoeda(Math.abs(totalFiltrado))}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {lista.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                   <Calendar size={36} className="mb-3 opacity-20" />
                   <p className="text-sm font-medium">Nenhum lançamento em {MESES[mes]}</p>
                   <p className="text-xs mt-1 opacity-60">Adicione uma receita ou despesa acima</p>
                 </div>
+              ) : listaFiltrada.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
+                  <Calendar size={30} className="mb-2 opacity-20" />
+                  <p className="text-sm font-medium">Nenhum lançamento com esse filtro</p>
+                  <button onClick={() => { setFiltroTipo('todos'); setFiltroCategoria('todas') }} className="text-xs mt-1 text-primary hover:underline">Limpar filtros</button>
+                </div>
               ) : (
                 <div className="space-y-2">
-                  {lista.map(l => (
+                  {listaFiltrada.map(l => (
                     <div key={l.id} className="flex items-center gap-2 rounded-xl border border-border bg-card p-3">
                       <button
                         onClick={() => abrirEdicao(l)}

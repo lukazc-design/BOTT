@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Save, Plus, Trash2, CheckCircle, Package, Wrench, Search, Library, X,
+  ChevronUp, ChevronDown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,9 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
-} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { carregarPerfil, salvarPerfil } from '@/lib/storage'
 import type { PerfilTecnico, CategoriaServico } from '@/lib/tipos'
@@ -45,7 +43,8 @@ export function TabelaPrecos({ ativo }: { ativo?: boolean }) {
   const [buscaMaterial, setBuscaMaterial] = useState('')
   const [buscaServico, setBuscaServico] = useState('')
   const [buscaKit, setBuscaKit] = useState('')
-  const [bibliotecaAberta, setBibliotecaAberta] = useState(false)
+  const [catalogoAberto, setCatalogoAberto] = useState(false)
+  const [buscaCatalogo, setBuscaCatalogo] = useState('')
 
   // Recarrega ao abrir a aba (dados podem ter mudado no Perfil ou em outro dispositivo)
   useEffect(() => { if (ativo !== false) setPerfil(carregarPerfil()) }, [ativo])
@@ -86,10 +85,33 @@ export function TabelaPrecos({ ativo }: { ativo?: boolean }) {
     })
   }
 
+  // Adiciona vários itens de uma vez (ex.: categoria inteira do catálogo)
+  const adicionarVarios = (itens: { nome: string; unidade: string }[]) => {
+    setPerfil(prev => {
+      const existentes = new Set(prev.materiais.map(m => norm(m.nome)))
+      const novos = itens
+        .filter(it => !existentes.has(norm(it.nome)))
+        .map(it => ({ id: crypto.randomUUID(), nome: it.nome, unidade: it.unidade, precoCusto: 0, precoVenda: 0 }))
+      if (novos.length === 0) return prev
+      return { ...prev, materiais: [...prev.materiais, ...novos] }
+    })
+  }
+
   const nomesNaTabela = useMemo(
     () => new Set(perfil.materiais.map(m => norm(m.nome))),
     [perfil.materiais]
   )
+
+  // Catálogo pronto, filtrado pela busca do catálogo inline
+  const catalogoFiltrado = useMemo(() => {
+    const q = norm(buscaCatalogo.trim())
+    if (!q) return CATALOGO_MATERIAIS
+    return CATALOGO_MATERIAIS
+      .map(cat => ({ ...cat, itens: cat.itens.filter(it => norm(it.nome).includes(q) || norm(cat.categoria).includes(q)) }))
+      .filter(cat => cat.itens.length > 0)
+  }, [buscaCatalogo])
+
+  const totalCatalogo = useMemo(() => CATALOGO_MATERIAIS.reduce((s, c) => s + c.itens.length, 0), [])
 
   const materiaisFiltrados = useMemo(() => {
     const q = norm(buscaMaterial.trim())
@@ -182,7 +204,7 @@ export function TabelaPrecos({ ativo }: { ativo?: boolean }) {
             <p className="text-xs text-muted-foreground">Custo = quanto você paga. Venda = quanto cobra do cliente.</p>
           </div>
 
-          {/* Barra de ferramentas: busca + adicionar da biblioteca + novo */}
+          {/* Barra de ferramentas: busca + materiais prontos + novo */}
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
               <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -194,52 +216,124 @@ export function TabelaPrecos({ ativo }: { ativo?: boolean }) {
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="gap-1.5 h-9 flex-1 sm:flex-none" onClick={() => setBibliotecaAberta(true)}>
-                <Library size={14} /> Biblioteca
+              <Button
+                variant={catalogoAberto ? 'default' : 'outline'}
+                size="sm" className="gap-1.5 h-9 flex-1 sm:flex-none"
+                onClick={() => setCatalogoAberto(o => !o)}
+              >
+                <Library size={14} /> Materiais prontos
+                {catalogoAberto ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </Button>
-              <Button size="sm" className="gap-1.5 h-9 flex-1 sm:flex-none" onClick={adicionarMaterial}>
-                <Plus size={14} /> Novo
+              <Button size="sm" variant="outline" className="gap-1.5 h-9 flex-1 sm:flex-none" onClick={adicionarMaterial}>
+                <Plus size={14} /> Outro
               </Button>
             </div>
           </div>
 
-          {/* Lista de materiais em cards (sem rolagem lateral no celular) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Catálogo pronto — lista inline agrupada por categoria */}
+          {catalogoAberto && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5">
+              <div className="p-3 border-b border-border space-y-2">
+                <div className="flex items-center gap-2">
+                  <Library size={15} className="text-primary shrink-0" />
+                  <p className="text-sm font-medium flex-1">Materiais prontos ({totalCatalogo})</p>
+                  <button onClick={() => setCatalogoAberto(false)} className="text-muted-foreground hover:text-foreground p-1" aria-label="Fechar catálogo"><X size={16} /></button>
+                </div>
+                <p className="text-xs text-muted-foreground">Toque para adicionar à sua tabela. Depois é só definir o preço.</p>
+                <div className="relative">
+                  <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={buscaCatalogo}
+                    onChange={e => setBuscaCatalogo(e.target.value)}
+                    placeholder="Buscar no catálogo (ex.: 3/8, disjuntor, dreno)..."
+                    className="pl-8 h-9 bg-background"
+                  />
+                </div>
+              </div>
+              <div className="max-h-[360px] overflow-y-auto p-3 space-y-4">
+                {catalogoFiltrado.map(cat => {
+                  const faltam = cat.itens.filter(it => !nomesNaTabela.has(norm(it.nome)))
+                  return (
+                    <div key={cat.categoria}>
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <p className="text-xs font-semibold text-muted-foreground">{cat.categoria}</p>
+                        {faltam.length > 0 && (
+                          <button onClick={() => adicionarVarios(cat.itens)} className="text-[10px] text-primary hover:underline shrink-0">
+                            + Adicionar todos ({faltam.length})
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        {cat.itens.map(it => {
+                          const jaTem = nomesNaTabela.has(norm(it.nome))
+                          return (
+                            <button
+                              key={it.nome}
+                              onClick={() => !jaTem && adicionarDaBiblioteca(it.nome, it.unidade)}
+                              disabled={jaTem}
+                              className={cn(
+                                'w-full flex items-center gap-2 rounded-lg border px-3 py-2 text-left transition-colors',
+                                jaTem ? 'border-profit/30 bg-profit/5 cursor-default' : 'border-border bg-card hover:border-primary/50 hover:bg-accent'
+                              )}
+                            >
+                              <span className="flex-1 min-w-0">
+                                <span className="text-sm block truncate">{it.nome}</span>
+                                <span className="text-[10px] text-muted-foreground">Unidade: {it.unidade}</span>
+                              </span>
+                              {jaTem ? (
+                                <span className="flex items-center gap-1 text-[10px] text-profit font-medium shrink-0"><CheckCircle size={13} /> Na tabela</span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-[11px] text-primary font-medium shrink-0"><Plus size={13} /> Adicionar</span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+                {catalogoFiltrado.length === 0 && (
+                  <p className="text-center py-6 text-sm text-muted-foreground">Nenhum material encontrado para “{buscaCatalogo}”.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Materiais do usuário — em lista de largura total */}
+          <div className="space-y-2">
             {materiaisFiltrados.map(m => (
-              <div key={m.id} className="rounded-xl border border-border bg-card p-3 space-y-2.5">
+              <div key={m.id} className="rounded-xl border border-border bg-card p-3 flex flex-col sm:flex-row sm:items-end gap-2">
+                <label className="flex-1 space-y-1 min-w-0">
+                  <CampoLabel>Material</CampoLabel>
+                  <Input value={m.nome} onChange={e => atualizarMaterial(m.id, 'nome', e.target.value)} className="h-9 text-sm" />
+                </label>
                 <div className="flex items-end gap-2">
-                  <label className="flex-1 space-y-1">
-                    <CampoLabel>Material</CampoLabel>
-                    <Input value={m.nome} onChange={e => atualizarMaterial(m.id, 'nome', e.target.value)} className="h-9 text-sm" />
+                  <label className="space-y-1 w-16">
+                    <CampoLabel>Unid.</CampoLabel>
+                    <Input value={m.unidade} onChange={e => atualizarMaterial(m.id, 'unidade', e.target.value)} className="h-9 text-sm text-center px-1" />
+                  </label>
+                  <label className="space-y-1 flex-1 sm:w-24 sm:flex-none">
+                    <CampoLabel>Custo R$</CampoLabel>
+                    <Input type="number" value={m.precoCusto} onChange={e => atualizarMaterial(m.id, 'precoCusto', e.target.value)} className="h-9 text-sm text-right text-cost" step="0.01" />
+                  </label>
+                  <label className="space-y-1 flex-1 sm:w-24 sm:flex-none">
+                    <CampoLabel>Venda R$</CampoLabel>
+                    <Input type="number" value={m.precoVenda} onChange={e => atualizarMaterial(m.id, 'precoVenda', e.target.value)} className="h-9 text-sm text-right text-sale" step="0.01" />
                   </label>
                   <button
                     onClick={() => removerMaterial(m.id)}
                     aria-label="Remover material"
-                    className="mb-1 p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    className="mb-0.5 p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
                   >
                     <Trash2 size={15} />
                   </button>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <label className="space-y-1">
-                    <CampoLabel>Unidade</CampoLabel>
-                    <Input value={m.unidade} onChange={e => atualizarMaterial(m.id, 'unidade', e.target.value)} className="h-9 text-sm text-center" />
-                  </label>
-                  <label className="space-y-1">
-                    <CampoLabel>Custo R$</CampoLabel>
-                    <Input type="number" value={m.precoCusto} onChange={e => atualizarMaterial(m.id, 'precoCusto', e.target.value)} className="h-9 text-sm text-right text-cost" step="0.01" />
-                  </label>
-                  <label className="space-y-1">
-                    <CampoLabel>Venda R$</CampoLabel>
-                    <Input type="number" value={m.precoVenda} onChange={e => atualizarMaterial(m.id, 'precoVenda', e.target.value)} className="h-9 text-sm text-right text-sale" step="0.01" />
-                  </label>
                 </div>
               </div>
             ))}
           </div>
           {materiaisFiltrados.length === 0 && (
             <p className="text-center py-8 text-sm text-muted-foreground">
-              {buscaMaterial ? 'Nenhum material encontrado para essa busca.' : 'Nenhum material. Use a Biblioteca ou clique em Novo.'}
+              {buscaMaterial ? 'Nenhum material encontrado para essa busca.' : 'Nenhum material ainda. Abra “Materiais prontos” e escolha, ou clique em “Outro”.'}
             </p>
           )}
           <p className="text-[10px] text-muted-foreground">
@@ -399,120 +493,11 @@ export function TabelaPrecos({ ativo }: { ativo?: boolean }) {
         </TabsContent>
       </Tabs>
 
-      {/* ── Diálogo: Biblioteca de materiais ───────────────────────────── */}
-      <BibliotecaDialog
-        aberta={bibliotecaAberta}
-        onFechar={() => setBibliotecaAberta(false)}
-        nomesNaTabela={nomesNaTabela}
-        onAdicionar={adicionarDaBiblioteca}
-      />
-
       {salvo && (
         <div className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-profit/20 border border-profit/40 text-profit text-sm shadow-lg z-50">
           <CheckCircle size={16} /> Salvo com sucesso!
         </div>
       )}
     </div>
-  )
-}
-
-// ─── Diálogo da biblioteca de materiais ──────────────────────────────────────
-function BibliotecaDialog({
-  aberta, onFechar, nomesNaTabela, onAdicionar,
-}: {
-  aberta: boolean
-  onFechar: () => void
-  nomesNaTabela: Set<string>
-  onAdicionar: (nome: string, unidade: string) => void
-}) {
-  const [busca, setBusca] = useState('')
-
-  const categoriasFiltradas = useMemo(() => {
-    const q = norm(busca.trim())
-    if (!q) return CATALOGO_MATERIAIS
-    return CATALOGO_MATERIAIS
-      .map(cat => ({
-        ...cat,
-        itens: cat.itens.filter(it => norm(it.nome).includes(q) || norm(cat.categoria).includes(q)),
-      }))
-      .filter(cat => cat.itens.length > 0)
-  }, [busca])
-
-  const totalItens = useMemo(
-    () => CATALOGO_MATERIAIS.reduce((s, c) => s + c.itens.length, 0),
-    []
-  )
-
-  return (
-    <Dialog open={aberta} onOpenChange={o => { if (!o) onFechar() }}>
-      <DialogContent className="max-w-lg p-0 gap-0 max-h-[85vh] flex flex-col">
-        <DialogHeader className="p-4 pb-3 border-b border-border">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Library size={17} className="text-primary" /> Biblioteca de materiais
-          </DialogTitle>
-          <DialogDescription className="text-xs">
-            {totalItens} materiais técnicos prontos. Toque para adicionar à sua tabela e depois defina o preço.
-          </DialogDescription>
-          <div className="relative mt-2">
-            <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={busca}
-              onChange={e => setBusca(e.target.value)}
-              placeholder="Buscar por nome ou categoria (ex.: 3/8, disjuntor, dreno)..."
-              className="pl-8 h-9"
-              autoFocus
-            />
-          </div>
-        </DialogHeader>
-
-        <div className="overflow-y-auto p-4 space-y-4 flex-1">
-          {categoriasFiltradas.map(cat => (
-            <div key={cat.categoria}>
-              <p className="text-xs font-semibold text-muted-foreground mb-2 sticky top-0 bg-background/95 py-1">
-                {cat.categoria}
-              </p>
-              <div className="space-y-1.5">
-                {cat.itens.map(it => {
-                  const jaAdicionado = nomesNaTabela.has(norm(it.nome))
-                  return (
-                    <div
-                      key={it.nome}
-                      className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm truncate">{it.nome}</p>
-                        <p className="text-[10px] text-muted-foreground">Unidade: {it.unidade}</p>
-                      </div>
-                      {jaAdicionado ? (
-                        <span className="flex items-center gap-1 text-[10px] text-profit font-medium flex-shrink-0">
-                          <CheckCircle size={13} /> Na tabela
-                        </span>
-                      ) : (
-                        <Button
-                          size="sm" variant="outline"
-                          className="h-7 gap-1 text-xs flex-shrink-0"
-                          onClick={() => onAdicionar(it.nome, it.unidade)}
-                        >
-                          <Plus size={13} /> Adicionar
-                        </Button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
-          {categoriasFiltradas.length === 0 && (
-            <p className="text-center py-8 text-sm text-muted-foreground">Nenhum material encontrado para “{busca}”.</p>
-          )}
-        </div>
-
-        <div className="p-3 border-t border-border flex justify-end">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={onFechar}>
-            <X size={14} /> Fechar
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   )
 }

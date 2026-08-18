@@ -175,7 +175,15 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
                 <XAxis dataKey="mes" tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
                 <YAxis tickLine={false} axisLine={false} width={48}
                   tickFormatter={(v: number) => `R$${Math.round(v / 100 / 1000)}k`} className="text-xs" />
-                <ChartTooltip content={<ChartTooltipContent formatter={(v) => fmtC(Number(v))} />} />
+                <ChartTooltip content={<ChartTooltipContent
+                  formatter={(value, name, item) => (
+                    <div className="flex items-center gap-2 w-full">
+                      <span className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: item?.color }} />
+                      <span className="text-muted-foreground flex-1">{chartConfig[name as keyof typeof chartConfig]?.label ?? name}</span>
+                      <span className="font-mono font-medium tabular-nums text-foreground">{fmtC(Number(value))}</span>
+                    </div>
+                  )}
+                />} />
                 <ChartLegend content={<ChartLegendContent className="pt-2 gap-5 text-sm" />} />
                 <Bar name="Receitas" dataKey="receitas" fill="var(--color-receitas)" radius={[4, 4, 0, 0]} maxBarSize={38} />
                 <Bar name="Despesas" dataKey="despesas" fill="var(--color-despesas)" radius={[4, 4, 0, 0]} maxBarSize={38} />
