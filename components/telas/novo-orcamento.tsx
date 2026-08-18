@@ -1673,12 +1673,23 @@ export function NovoOrcamento({
                 <div className="w-10 h-1 rounded-full bg-border absolute top-2 left-1/2 -translate-x-1/2" />
                 <span className="text-sm font-semibold mt-1">Detalhes do Orçamento</span>
               </div>
-              <button
-                onClick={() => setDrawerAberto(false)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
-              >
-                <X size={16} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={salvar}
+                  disabled={salvando}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                >
+                  {salvando ? <><Loader2 size={13} className="animate-spin" /> Salvando...</>
+                    : orcamentoSalvo ? <><CheckCircle size={13} /> Salvo!</>
+                    : <><CheckCircle size={13} /> Salvar</>}
+                </button>
+                <button
+                  onClick={() => setDrawerAberto(false)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
             {/* Painel dentro do drawer — pb-safe garante que os botoes de baixo
                 nao fiquem atras da barra de gestos do celular */}
