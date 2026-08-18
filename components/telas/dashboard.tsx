@@ -96,10 +96,10 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
           <h1 className="text-2xl font-bold text-foreground text-balance">Visão Geral</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Seu negócio de refrigeração num relance</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => setGuiaAberto(true)} variant="outline" className="gap-2"><HelpCircle size={16} /> Guia</Button>
-          <Button onClick={onNovoOrcamento} className="gap-2"><Plus size={16} /> Novo Orçamento</Button>
-          <Button onClick={onNovoOrcamento} className="gap-2 bg-blue-800 text-white hover:bg-blue-900"><Mic size={16} /> Por voz</Button>
+          <Button onClick={onNovoOrcamento} className="gap-2 flex-1 sm:flex-none"><Plus size={16} /> Novo Orçamento</Button>
+          <Button onClick={onNovoOrcamento} className="gap-2 flex-1 sm:flex-none bg-blue-800 text-white hover:bg-blue-900"><Mic size={16} /> Por voz</Button>
         </div>
       </div>
 

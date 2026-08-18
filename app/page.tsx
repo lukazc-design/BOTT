@@ -211,7 +211,7 @@ export default function Home() {
         <div
           ref={el => { scrollRefs.current.dashboard = el }}
           onScroll={() => salvarScroll('dashboard')}
-          className={pagina === 'dashboard' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+          className={pagina === 'dashboard' ? 'flex flex-col flex-1 overflow-y-auto overflow-x-hidden' : 'hidden'}
         >
           <Dashboard
             ativo={pagina === 'dashboard'}
@@ -236,42 +236,42 @@ export default function Home() {
         <div
           ref={el => { scrollRefs.current.historico = el }}
           onScroll={() => salvarScroll('historico')}
-          className={pagina === 'historico' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+          className={pagina === 'historico' ? 'flex flex-col flex-1 overflow-y-auto overflow-x-hidden' : 'hidden'}
         >
           <Historico ativo={pagina === 'historico'} onEditarNoChat={handleEditarNoChat} abrirId={abrirOrcId} abrirNonce={abrirOrcNonce} />
         </div>
         <div
           ref={el => { scrollRefs.current.clientes = el }}
           onScroll={() => salvarScroll('clientes')}
-          className={pagina === 'clientes' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+          className={pagina === 'clientes' ? 'flex flex-col flex-1 overflow-y-auto overflow-x-hidden' : 'hidden'}
         >
           <Clientes ativo={pagina === 'clientes'} onEditarOrcamento={handleEditarOrcamentoPorId} />
         </div>
         <div
           ref={el => { scrollRefs.current['fluxo-caixa'] = el }}
           onScroll={() => salvarScroll('fluxo-caixa')}
-          className={pagina === 'fluxo-caixa' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+          className={pagina === 'fluxo-caixa' ? 'flex flex-col flex-1 overflow-y-auto overflow-x-hidden' : 'hidden'}
         >
           <FluxoCaixa ativo={pagina === 'fluxo-caixa'} />
         </div>
         <div
           ref={el => { scrollRefs.current.funcionarios = el }}
           onScroll={() => salvarScroll('funcionarios')}
-          className={pagina === 'funcionarios' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+          className={pagina === 'funcionarios' ? 'flex flex-col flex-1 overflow-y-auto overflow-x-hidden' : 'hidden'}
         >
           <Funcionarios ativo={pagina === 'funcionarios'} />
         </div>
         <div
           ref={el => { scrollRefs.current['tabela-precos'] = el }}
           onScroll={() => salvarScroll('tabela-precos')}
-          className={pagina === 'tabela-precos' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+          className={pagina === 'tabela-precos' ? 'flex flex-col flex-1 overflow-y-auto overflow-x-hidden' : 'hidden'}
         >
           <TabelaPrecos ativo={pagina === 'tabela-precos'} />
         </div>
         <div
           ref={el => { scrollRefs.current.perfil = el }}
           onScroll={() => salvarScroll('perfil')}
-          className={pagina === 'perfil' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+          className={pagina === 'perfil' ? 'flex flex-col flex-1 overflow-y-auto overflow-x-hidden' : 'hidden'}
         >
           <Perfil onOllamaStatus={setOllamaOnline} />
         </div>
@@ -279,7 +279,7 @@ export default function Home() {
           <div
             ref={el => { scrollRefs.current.admin = el }}
             onScroll={() => salvarScroll('admin')}
-            className={pagina === 'admin' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+            className={pagina === 'admin' ? 'flex flex-col flex-1 overflow-y-auto overflow-x-hidden' : 'hidden'}
           >
             <Admin />
           </div>

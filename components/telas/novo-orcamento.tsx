@@ -1474,7 +1474,7 @@ export function NovoOrcamento({
                 </div>
                 <div className={cn('flex flex-col max-w-[80%] md:max-w-[72%]', msg.role === 'user' ? 'items-end' : 'items-start')}>
                   <div className={cn(
-                    'px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap',
+                    'px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words',
                     msg.role === 'assistant'
                       ? 'bg-card border border-border text-foreground rounded-tl-sm'
                       : 'bg-primary text-primary-foreground rounded-tr-sm'
