@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutGrid, FilePlus2, History, Settings, LogOut, Sparkles, Users } from 'lucide-react'
+import { LayoutGrid, FilePlus2, History, Settings, LogOut, Mic, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -75,18 +75,18 @@ export function NavBottom({ paginaAtiva, onNavegar }: NavBottomProps) {
             <span className="text-[9px] font-bold leading-none">Novo</span>
           </button>
 
-          {/* IA — atalho direto para o chat da IA, azul mais escuro para se destacar */}
+          {/* Voz — atalho direto para o orçamento por voz, azul mais escuro para se destacar */}
           <button
             onClick={() => onNavegar('novo-orcamento')}
-            aria-label="Chat da IA"
+            aria-label="Orçamento por voz"
             className={cn(
               'relative -top-4 flex flex-col items-center justify-center gap-0.5',
               'w-14 h-14 rounded-full bg-blue-800 text-white',
               'shadow-lg shadow-blue-900/40 ring-4 ring-sidebar transition-transform active:scale-95'
             )}
           >
-            <Sparkles size={18} strokeWidth={2.4} />
-            <span className="text-[9px] font-bold leading-none">IA</span>
+            <Mic size={18} strokeWidth={2.4} />
+            <span className="text-[9px] font-bold leading-none">Voz</span>
           </button>
         </div>
 

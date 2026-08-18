@@ -1165,7 +1165,7 @@ export function NovoOrcamento({
         iaOnline = false
       }
     }
-    if (!iaOnline) { setErro('IA offline. Verifique se o Ollama e o ngrok estao rodando no seu PC.'); return }
+    if (!iaOnline) { setErro('Assistente offline. Verifique sua conexão e tente novamente.'); return }
 
     setErro('')
     const novaMensagem: MensagemChat = { role: 'user', content: texto, timestamp: new Date() }
@@ -1230,13 +1230,13 @@ export function NovoOrcamento({
       const data = await resp.json()
       // Bloqueio de licença: NÃO faz fallback local (evita burlar o limite)
       if (resp.status === 402) {
-        const msgErro = data.erro ?? 'Assinatura necessária para usar a IA.'
+          const msgErro = data.erro ?? 'Assinatura necessária para usar o assistente.'
         setMensagens(prev => [...prev, { role: 'assistant', content: msgErro, timestamp: new Date() }])
         setErro(msgErro)
         return
       }
       if (!resp.ok || data.erro) {
-        const msgErro = data.erro ?? 'Erro ao processar com a IA.'
+          const msgErro = data.erro ?? 'Erro ao processar o pedido.'
         // Mesmo com erro da IA, tenta parser local para não perder o orçamento
         const acaoLocal = parsearTextoLocalmente(texto)
         if (acaoLocal) {
@@ -1267,7 +1267,7 @@ export function NovoOrcamento({
         aplicarAcao(acaoLocal)
         setMensagens(prev => [...prev, { role: 'assistant', content: '(Processado localmente) ' + (acaoLocal.mensagem ?? 'Orçamento atualizado.'), timestamp: new Date() }])
       } else {
-        setMensagens(prev => [...prev, { role: 'assistant', content: `IA indisponivel: ${msg}. Verifique ngrok e Ollama.`, timestamp: new Date() }])
+        setMensagens(prev => [...prev, { role: 'assistant', content: `Assistente indisponível: ${msg}. Verifique sua conexão e tente novamente.`, timestamp: new Date() }])
         setErro(msg)
       }
     } finally {
@@ -1591,7 +1591,7 @@ export function NovoOrcamento({
                       ? 'Transcrevendo fala...'
                       : ollamaOnline
                         ? 'Digite ou use o microfone — Enter envia'
-                        : 'IA offline — verifique a conexao (status na barra lateral)'
+                        : 'Assistente offline — verifique a conexão (status na barra lateral)'
                   }
                   className="min-h-[44px] max-h-36 resize-none text-sm py-2.5 leading-snug rounded-2xl"
                   disabled={processando}
