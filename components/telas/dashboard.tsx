@@ -145,24 +145,57 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
           </button>
         </div>
         {temSerie ? (
-          <ChartContainer config={chartConfig} className="h-[260px] w-full">
-            <ComposedChart data={dadosMes} barGap={4} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/60" />
-              <XAxis dataKey="mes" tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
-              <YAxis tickLine={false} axisLine={false} width={48}
-                tickFormatter={(v: number) => `R$${Math.round(v / 100 / 1000)}k`} className="text-xs" />
-              <ChartTooltip content={<ChartTooltipContent formatter={(v) => fmtC(Number(v))} />} />
-              <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="receitas" fill="var(--color-receitas)" radius={[4, 4, 0, 0]} maxBarSize={38} />
-              <Bar dataKey="despesas" fill="var(--color-despesas)" radius={[4, 4, 0, 0]} maxBarSize={38} />
-              <Line
-                dataKey="lucro" type="monotone"
-                stroke="var(--color-lucro)" strokeWidth={2.5}
-                dot={{ r: 3, fill: 'var(--color-lucro)' }}
-                activeDot={{ r: 5 }}
-              />
-            </ComposedChart>
-          </ChartContainer>
+          <>
+            {/* Legenda destacada com os valores do mês atual */}
+            {(() => {
+              const atual = dadosMes[dadosMes.length - 1]
+              const itens = [
+                { label: 'Receitas', valor: atual?.receitas ?? 0, cor: 'var(--chart-1)', hint: 'entrou' },
+                { label: 'Despesas', valor: atual?.despesas ?? 0, cor: 'var(--chart-2)', hint: 'saiu' },
+                { label: 'Lucro',    valor: atual?.lucro ?? 0,    cor: 'var(--chart-3)', hint: 'sobrou' },
+              ]
+              return (
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {itens.map(it => (
+                    <div key={it.label} className="rounded-lg border border-border bg-background p-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: it.cor }} />
+                        <span className="text-[11px] text-muted-foreground truncate">{it.label}</span>
+                      </div>
+                      <p className="text-sm font-bold mt-1 tabular-nums" style={{ color: it.cor }}>{fmtC(it.valor)}</p>
+                      <p className="text-[10px] text-muted-foreground">no mês</p>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+            <ChartContainer config={chartConfig} className="h-[260px] w-full">
+              <ComposedChart data={dadosMes} barGap={4} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/60" />
+                <XAxis dataKey="mes" tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
+                <YAxis tickLine={false} axisLine={false} width={48}
+                  tickFormatter={(v: number) => `R$${Math.round(v / 100 / 1000)}k`} className="text-xs" />
+                <ChartTooltip content={<ChartTooltipContent
+                  formatter={(value, name, item) => (
+                    <div className="flex items-center gap-2 w-full">
+                      <span className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: item?.color }} />
+                      <span className="text-muted-foreground flex-1">{chartConfig[name as keyof typeof chartConfig]?.label ?? name}</span>
+                      <span className="font-mono font-medium tabular-nums text-foreground">{fmtC(Number(value))}</span>
+                    </div>
+                  )}
+                />} />
+                <ChartLegend content={<ChartLegendContent className="pt-2 gap-5 text-sm" />} />
+                <Bar name="Receitas" dataKey="receitas" fill="var(--color-receitas)" radius={[4, 4, 0, 0]} maxBarSize={38} />
+                <Bar name="Despesas" dataKey="despesas" fill="var(--color-despesas)" radius={[4, 4, 0, 0]} maxBarSize={38} />
+                <Line
+                  name="Lucro" dataKey="lucro" type="monotone"
+                  stroke="var(--color-lucro)" strokeWidth={2.5}
+                  dot={{ r: 3, fill: 'var(--color-lucro)' }}
+                  activeDot={{ r: 5 }}
+                />
+              </ComposedChart>
+            </ChartContainer>
+          </>
         ) : (
           <VazioGrafico
             texto="Ainda não há lançamentos. Registre recebimentos e despesas para ver a evolução aqui."
