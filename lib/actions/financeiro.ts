@@ -7,6 +7,7 @@ import { and, desc, eq, gte, lte, count } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
+import type { ResumoDashboard } from '@/lib/tipos'
 
 async function getUserId() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -277,20 +278,6 @@ export async function resumoMes(ano: number, mes: number): Promise<ResumoFinance
     porCategoria: Array.from(catMap.values()).sort((a, b) => b.total - a.total),
     porDia,
   }
-}
-
-export type ResumoDashboard = {
-  totalClientes: number
-  totalFuncionarios: number
-  funcionariosAtivos: number
-  folhaMensal: number            // soma dos salários dos ativos (centavos)
-  receitasTotais: number
-  despesasTotais: number
-  saldoTotal: number
-  receitasMes: number
-  despesasMes: number
-  porMes: { mes: string; receitas: number; despesas: number }[]  // últimos 6 meses
-  topCategorias: { categoria: string; tipo: string; total: number }[]
 }
 
 const NOMES_MES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
