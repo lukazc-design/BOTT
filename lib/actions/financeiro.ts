@@ -2,8 +2,8 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { funcionarios, lancamentos, orcamentos } from '@/lib/db/schema'
-import { and, desc, eq, gte, lte } from 'drizzle-orm'
+import { funcionarios, lancamentos, orcamentos, clientes } from '@/lib/db/schema'
+import { and, desc, eq, gte, lte, count } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
@@ -224,7 +224,7 @@ export async function receberOrcamento(orcamentoId: string, valor?: number, data
   })
 }
 
-// ─── Consultas / resumo ───────────────────────────────────────────────────────
+// ─── Consultas / resumo ────────────────────────────────────────────────��──────
 
 // Lista lançamentos de um mês (0-11) e ano específicos, mais recentes primeiro
 export async function listarLancamentos(ano: number, mes: number) {
@@ -276,5 +276,83 @@ export async function resumoMes(ano: number, mes: number): Promise<ResumoFinance
     saldo: receitas - despesas,
     porCategoria: Array.from(catMap.values()).sort((a, b) => b.total - a.total),
     porDia,
+  }
+}
+
+export type ResumoDashboard = {
+  totalClientes: number
+  totalFuncionarios: number
+  funcionariosAtivos: number
+  folhaMensal: number            // soma dos salários dos ativos (centavos)
+  receitasTotais: number
+  despesasTotais: number
+  saldoTotal: number
+  receitasMes: number
+  despesasMes: number
+  porMes: { mes: string; receitas: number; despesas: number }[]  // últimos 6 meses
+  topCategorias: { categoria: string; tipo: string; total: number }[]
+}
+
+const NOMES_MES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+// Resumo consolidado para o Dashboard: clientes, equipe e finanças (6 meses).
+export async function resumoDashboard(): Promise<ResumoDashboard> {
+  const userId = await getUserId()
+
+  const [cntClientes] = await db.select({ n: count() }).from(clientes).where(eq(clientes.userId, userId))
+  const listaFunc = await db.select().from(funcionarios).where(eq(funcionarios.userId, userId))
+  const funcionariosAtivos = listaFunc.filter(f => f.ativo)
+  const folhaMensal = funcionariosAtivos.reduce((s, f) => s + f.salario, 0)
+
+  // Janela de 6 meses (incluindo o atual)
+  const agora = new Date()
+  const inicioJanela = new Date(agora.getFullYear(), agora.getMonth() - 5, 1, 0, 0, 0)
+  const todos = await db
+    .select({ tipo: lancamentos.tipo, valor: lancamentos.valor, data: lancamentos.data, categoria: lancamentos.categoria })
+    .from(lancamentos)
+    .where(eq(lancamentos.userId, userId))
+
+  const porMes = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(agora.getFullYear(), agora.getMonth() - 5 + i, 1)
+    return { mes: NOMES_MES[d.getMonth()], ano: d.getFullYear(), mesIdx: d.getMonth(), receitas: 0, despesas: 0 }
+  })
+
+  let receitasTotais = 0, despesasTotais = 0, receitasMes = 0, despesasMes = 0
+  const catMap = new Map<string, { categoria: string; tipo: string; total: number }>()
+
+  for (const l of todos) {
+    if (l.tipo === 'receita') receitasTotais += l.valor
+    else despesasTotais += l.valor
+
+    const d = new Date(l.data)
+    if (d.getFullYear() === agora.getFullYear() && d.getMonth() === agora.getMonth()) {
+      if (l.tipo === 'receita') receitasMes += l.valor
+      else despesasMes += l.valor
+    }
+    if (d >= inicioJanela) {
+      const slot = porMes.find(m => m.ano === d.getFullYear() && m.mesIdx === d.getMonth())
+      if (slot) {
+        if (l.tipo === 'receita') slot.receitas += l.valor
+        else slot.despesas += l.valor
+      }
+    }
+    const chave = `${l.tipo}:${l.categoria}`
+    const atual = catMap.get(chave) ?? { categoria: l.categoria, tipo: l.tipo, total: 0 }
+    atual.total += l.valor
+    catMap.set(chave, atual)
+  }
+
+  return {
+    totalClientes: cntClientes?.n ?? 0,
+    totalFuncionarios: listaFunc.length,
+    funcionariosAtivos: funcionariosAtivos.length,
+    folhaMensal,
+    receitasTotais,
+    despesasTotais,
+    saldoTotal: receitasTotais - despesasTotais,
+    receitasMes,
+    despesasMes,
+    porMes: porMes.map(({ mes, receitas, despesas }) => ({ mes, receitas, despesas })),
+    topCategorias: Array.from(catMap.values()).sort((a, b) => b.total - a.total).slice(0, 6),
   }
 }

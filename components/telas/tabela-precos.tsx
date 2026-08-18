@@ -105,14 +105,16 @@ export function TabelaPrecos({ ativo }: { ativo?: boolean }) {
 
       <Tabs defaultValue="materiais">
         <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto gap-0">
-          {[['materiais', 'Materiais', Package], ['servicos', 'Serviços', Wrench]].map(([v, label, Icon]) => (
+          {([
+            { v: 'materiais', label: 'Materiais', Icon: Package },
+            { v: 'servicos', label: 'Serviços', Icon: Wrench },
+          ] as const).map(({ v, label, Icon }) => (
             <TabsTrigger
-              key={v as string}
-              value={v as string}
+              key={v}
+              value={v}
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent px-4 py-2 text-sm gap-1.5"
             >
-              {/* @ts-expect-error Icon é um componente lucide */}
-              <Icon size={14} /> {label as string}
+              <Icon size={14} /> {label}
             </TabsTrigger>
           ))}
         </TabsList>
