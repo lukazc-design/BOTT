@@ -2,8 +2,9 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { orcamentos } from '@/lib/db/schema'
+import { orcamentos, clientes } from '@/lib/db/schema'
 import { and, desc, eq } from 'drizzle-orm'
+import { apenasDigitos } from '@/lib/telefone'
 import { headers } from 'next/headers'
 import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
@@ -25,8 +26,61 @@ export async function listarOrcamentos() {
     .orderBy(desc(orcamentos.updatedAt))
 }
 
+// Resolve o cliente vinculado ao orçamento:
+// 1) usa clienteId se veio explícito; 2) senão tenta casar pelo telefone;
+// 3) senão cria um cliente novo com os dados digitados no orçamento.
+async function resolverClienteId(
+  userId: string,
+  clienteIdEntrada: string | undefined,
+  nome: string,
+  telefone: string,
+  endereco: string,
+): Promise<string | null> {
+  if (clienteIdEntrada) {
+    const [c] = await db
+      .select({ id: clientes.id })
+      .from(clientes)
+      .where(and(eq(clientes.id, clienteIdEntrada), eq(clientes.userId, userId)))
+      .limit(1)
+    if (c) return c.id
+  }
+  const nomeLimpo = nome.trim()
+  if (!nomeLimpo) return null
+
+  // Casa por telefone (dedupe) quando houver
+  const telDigitos = apenasDigitos(telefone)
+  if (telDigitos) {
+    const existentes = await db
+      .select({ id: clientes.id, telefone: clientes.telefone })
+      .from(clientes)
+      .where(eq(clientes.userId, userId))
+    const match = existentes.find(c => apenasDigitos(c.telefone) === telDigitos)
+    if (match) return match.id
+  }
+
+  // Cria cliente novo a partir do orçamento
+  const now = new Date()
+  const novoId = randomUUID()
+  await db.insert(clientes).values({
+    id: novoId,
+    userId,
+    nome: nomeLimpo,
+    telefone: telefone ?? '',
+    telefone2: '',
+    email: '',
+    endereco: endereco ?? '',
+    bairro: '',
+    cidade: '',
+    observacoes: '',
+    createdAt: now,
+    updatedAt: now,
+  })
+  return novoId
+}
+
 export async function salvarOrcamento(dados: {
   id?: string
+  clienteId?: string
   clienteNome: string
   clienteEndereco: string
   clienteTelefone: string
@@ -59,11 +113,21 @@ export async function salvarOrcamento(dados: {
     return { ok: false as const, mensagem: `Limite de ${acesso.limiteMes} orçamentos/mês atingido. ${sufixo}` }
   }
 
+  // Vincula (ou cria) o cliente no cadastro central
+  const clienteId = await resolverClienteId(
+    userId,
+    dados.clienteId,
+    dados.clienteNome,
+    dados.clienteTelefone,
+    dados.clienteEndereco,
+  )
+
   await db
     .insert(orcamentos)
     .values({
       id,
       userId,
+      clienteId,
       clienteNome: dados.clienteNome,
       clienteEndereco: dados.clienteEndereco,
       clienteTelefone: dados.clienteTelefone,
@@ -79,6 +143,7 @@ export async function salvarOrcamento(dados: {
     .onConflictDoUpdate({
       target: orcamentos.id,
       set: {
+        clienteId,
         clienteNome: dados.clienteNome,
         clienteEndereco: dados.clienteEndereco,
         clienteTelefone: dados.clienteTelefone,

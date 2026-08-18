@@ -159,6 +159,40 @@ export const aparelhos = pgTable('aparelhos', {
   updatedAt: timestamp('updatedAt').notNull(),
 })
 
+// ─── OrçaFacil: Funcionários / ajudantes ────────────────────────────────────
+// Equipe do técnico. O salário-base e o dia de pagamento ajudam a gerar a folha.
+
+export const funcionarios = pgTable('funcionarios', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  nome: text('nome').notNull(),
+  funcao: text('funcao').notNull().default('Ajudante'), // Ajudante, Técnico, Auxiliar...
+  telefone: text('telefone').notNull().default(''),
+  salario: integer('salario').notNull().default(0),      // salário-base em centavos
+  diaPagamento: integer('diaPagamento').notNull().default(5), // dia do mês (1-31); 0 = sem fixo
+  ativo: boolean('ativo').notNull().default(true),
+  observacoes: text('observacoes').notNull().default(''),
+  createdAt: timestamp('createdAt').notNull(),
+  updatedAt: timestamp('updatedAt').notNull(),
+})
+
+// ─── OrçaFacil: Lançamentos (fluxo de caixa unificado) ──────────────────────
+// Entradas (receitas) e saídas (despesas). Pagamentos de salário viram uma
+// despesa com categoria 'salario' e funcionarioId preenchido.
+
+export const lancamentos = pgTable('lancamentos', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  tipo: text('tipo').notNull(),           // 'receita' | 'despesa'
+  categoria: text('categoria').notNull().default('outros'),
+  descricao: text('descricao').notNull().default(''),
+  valor: integer('valor').notNull().default(0), // em centavos, sempre positivo
+  data: timestamp('data').notNull(),
+  funcionarioId: text('funcionarioId'),   // preenchido quando é pagamento de salário
+  orcamentoId: text('orcamentoId'),       // preenchido quando a receita vem de um orçamento
+  createdAt: timestamp('createdAt').notNull(),
+})
+
 // ─── OrçaFacil: Orcamentos ──────────────────────────────────────────────────
 
 export const orcamentos = pgTable('orcamentos', {

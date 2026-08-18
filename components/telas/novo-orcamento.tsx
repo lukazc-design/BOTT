@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils'
 import { carregarPerfil, salvarOrcamento, carregarOrcamentos } from '@/lib/storage'
 import { salvarOrcamento as salvarOrcamentoDB } from '@/lib/actions/orcamentos'
+import { listarClientes } from '@/lib/actions/clientes'
 import {
   montarEquipamento, gerarItensEquipamento, calcularTotais, gerarNumeroOrcamento,
   formatarBtu, rotuloTipo,
@@ -799,6 +800,8 @@ export function NovoOrcamento({
   const [clienteNome, setClienteNome] = useState(estadoInicial?.clienteNome ?? '')
   const [clienteEndereco, setClienteEndereco] = useState(estadoInicial?.clienteEndereco ?? '')
   const [clienteTelefone, setClienteTelefone] = useState(estadoInicial?.clienteTelefone ?? '')
+  // Cliente do cadastro central vinculado a este orçamento (opcional)
+  const [clienteVinculadoId, setClienteVinculadoId] = useState<string | null>(null)
   const [observacoes, setObservacoes] = useState(estadoInicial?.observacoes ?? '')
   const [orcamentoSalvo, setOrcamentoSalvo] = useState<Orcamento | null>(estadoInicial?.orcamentoSalvo ?? null)
 
@@ -1281,6 +1284,7 @@ export function NovoOrcamento({
     try {
       dbRes = await salvarOrcamentoDB({
         id: orc.id,
+        clienteId: clienteVinculadoId ?? undefined,
         clienteNome: orc.clienteNome,
         clienteEndereco: orc.clienteEndereco,
         clienteTelefone: orc.clienteTelefone,
@@ -1302,11 +1306,21 @@ export function NovoOrcamento({
     setSucesso(`Orcamento ${orc.numero} salvo!`)
   }
 
+  // Vincula um cliente do cadastro central: preenche os campos e guarda o id
+  const vincularCliente = (c: { id: string; nome: string; telefone: string; endereco: string } | null) => {
+    if (!c) { setClienteVinculadoId(null); return }
+    setClienteVinculadoId(c.id)
+    setClienteNome(c.nome)
+    setClienteTelefone(c.telefone)
+    if (c.endereco) setClienteEndereco(c.endereco)
+  }
+
   const limpar = () => {
     setMensagens([{ ...MENSAGEM_INICIAL, timestamp: new Date() }])
     setEquipamentos([]); setItens([]); setItensExtras([]); setDescricoesRemovidas([]); setChavesRemovidas([])
     setAjustesItens({}); setDesconto({ tipo: 'percentual', valor: 0 })
     setClienteNome(''); setClienteEndereco(''); setClienteTelefone('')
+    setClienteVinculadoId(null)
     setObservacoes(''); setErro(''); setSucesso('')
     setOrcamentoSalvo(null); setInputChat('')
     setMostrarPreview(false)
@@ -1588,9 +1602,11 @@ export function NovoOrcamento({
           orcamentoSalvo={orcamentoSalvo}
           onEquipamentosChange={setEquipamentos}
           onItensChange={setItens}
-          onClienteNomeChange={setClienteNome}
+          onClienteNomeChange={(v) => { setClienteNome(v); setClienteVinculadoId(null) }}
           onClienteEnderecoChange={setClienteEndereco}
           onClienteTelefoneChange={setClienteTelefone}
+          clienteVinculadoId={clienteVinculadoId}
+          onVincularCliente={vincularCliente}
           onModoVisualizacaoChange={setModoVisualizacao}
           onSalvar={salvar}
           itensExtras={itensExtras}
@@ -1707,6 +1723,91 @@ export function NovoOrcamento({
   )
 }
 
+// ─── SELETOR DE CLIENTE CADASTRADO ───────────────────────────────────────────
+// Busca clientes do cadastro central e vincula ao orçamento (preenche os campos).
+function SeletorCliente({
+  clienteVinculadoId, clienteNome, onVincular,
+}: {
+  clienteVinculadoId: string | null
+  clienteNome: string
+  onVincular: (c: { id: string; nome: string; telefone: string; endereco: string } | null) => void
+}) {
+  const [aberto, setAberto] = useState(false)
+  const [busca, setBusca] = useState('')
+  const [lista, setLista] = useState<{ id: string; nome: string; telefone: string; endereco: string; cidade: string }[]>([])
+  const [carregando, setCarregando] = useState(false)
+
+  useEffect(() => {
+    if (!aberto || lista.length > 0) return
+    setCarregando(true)
+    listarClientes()
+      .then(cs => setLista(cs.map(c => ({ id: c.id, nome: c.nome, telefone: c.telefone, endereco: c.endereco, cidade: c.cidade }))))
+      .catch(() => {})
+      .finally(() => setCarregando(false))
+  }, [aberto, lista.length])
+
+  const filtrados = lista.filter(c => {
+    const q = busca.toLowerCase()
+    return c.nome.toLowerCase().includes(q) || c.telefone.includes(busca)
+  })
+
+  if (clienteVinculadoId) {
+    return (
+      <div className="flex items-center gap-1.5 rounded-md bg-primary/10 border border-primary/30 px-2 py-1.5">
+        <UserRound size={12} className="text-primary shrink-0" />
+        <span className="text-xs text-primary font-medium truncate flex-1">Vinculado: {clienteNome}</span>
+        <button onClick={() => onVincular(null)} className="text-primary/70 hover:text-primary shrink-0" aria-label="Desvincular cliente"><X size={12} /></button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setAberto(v => !v)}
+        className="w-full flex items-center gap-1.5 rounded-md border border-dashed border-border px-2 py-1.5 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
+      >
+        <Users size={12} /> Vincular cliente cadastrado
+        <ChevronDown size={12} className="ml-auto" />
+      </button>
+      {aberto && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setAberto(false)} />
+          <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-lg bg-popover border border-border shadow-xl p-2 space-y-1.5 max-h-64 overflow-y-auto">
+            <Input
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              placeholder="Buscar por nome ou telefone..."
+              className="h-8 text-xs"
+              autoFocus
+            />
+            {carregando ? (
+              <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-primary" /></div>
+            ) : filtrados.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground text-center py-3">
+                {lista.length === 0 ? 'Nenhum cliente cadastrado ainda.' : 'Nenhum resultado.'}
+              </p>
+            ) : (
+              filtrados.slice(0, 30).map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => { onVincular(c); setAberto(false); setBusca('') }}
+                  className="w-full text-left rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                >
+                  <p className="text-xs font-medium truncate">{c.nome}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {[c.telefone, c.cidade].filter(Boolean).join(' · ') || 'Sem contato'}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ─── PAINEL LATERAL com abas (inclui Preview integrado) ──────────────────────
 interface PainelLateralProps {
   equipamentos: EquipamentoOrcamento[]
@@ -1724,6 +1825,8 @@ interface PainelLateralProps {
   onClienteNomeChange: (v: string) => void
   onClienteEnderecoChange: (v: string) => void
   onClienteTelefoneChange: (v: string) => void
+  clienteVinculadoId: string | null
+  onVincularCliente: (c: { id: string; nome: string; telefone: string; endereco: string } | null) => void
   onModoVisualizacaoChange: (v: 'venda' | 'custo') => void
   onSalvar: () => void
   itensExtras: ItemOrcamento[]
@@ -1742,6 +1845,7 @@ function PainelLateral({
   modoVisualizacao, salvando, orcamentoSalvo,
   onEquipamentosChange, onItensChange,
   onClienteNomeChange, onClienteEnderecoChange, onClienteTelefoneChange,
+  clienteVinculadoId, onVincularCliente,
   onModoVisualizacaoChange, onSalvar,
   itensExtras, onItensExtrasChange,
   desconto, onDescontoChange, onAjustarItem, onRemoverItens, irParaPreview, mobile = false,
@@ -2004,6 +2108,11 @@ function PainelLateral({
           {/* Dados do cliente */}
           <div className="p-3 border-t border-border space-y-2">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Cliente</p>
+            <SeletorCliente
+              clienteVinculadoId={clienteVinculadoId}
+              clienteNome={clienteNome}
+              onVincular={onVincularCliente}
+            />
             <Input value={clienteNome} onChange={e => onClienteNomeChange(e.target.value)} placeholder="Nome" className="h-8 text-xs" />
             <Input value={clienteTelefone} onChange={e => onClienteTelefoneChange(e.target.value)} placeholder="Telefone" className="h-8 text-xs" />
             <Input value={clienteEndereco} onChange={e => onClienteEnderecoChange(e.target.value)} placeholder="Endereco" className="h-8 text-xs" />
