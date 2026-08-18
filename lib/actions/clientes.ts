@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { clientes, aparelhos, orcamentos } from '@/lib/db/schema'
+import { clientes, aparelhos, orcamentos, lancamentos } from '@/lib/db/schema'
 import { and, desc, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { randomUUID } from 'crypto'
@@ -90,7 +90,7 @@ export async function obterCliente(id: string) {
     .where(and(eq(aparelhos.clienteId, id), eq(aparelhos.userId, userId)))
     .orderBy(desc(aparelhos.createdAt))
 
-  const listaOrcamentos = await db
+  const listaOrcamentosRaw = await db
     .select({
       id: orcamentos.id,
       status: orcamentos.status,
@@ -99,6 +99,14 @@ export async function obterCliente(id: string) {
     }).from(orcamentos)
     .where(and(eq(orcamentos.clienteId, id), eq(orcamentos.userId, userId)))
     .orderBy(desc(orcamentos.createdAt))
+
+  // Um orçamento é "recebido" se já existe um lançamento de receita vinculado a ele
+  const receitasVinculadas = await db
+    .select({ orcamentoId: lancamentos.orcamentoId })
+    .from(lancamentos)
+    .where(and(eq(lancamentos.userId, userId), eq(lancamentos.tipo, 'receita')))
+  const idsRecebidos = new Set(receitasVinculadas.map(r => r.orcamentoId).filter(Boolean))
+  const listaOrcamentos = listaOrcamentosRaw.map(o => ({ ...o, recebido: idsRecebidos.has(o.id) }))
 
   return { cliente, aparelhos: listaAparelhos, orcamentos: listaOrcamentos }
 }

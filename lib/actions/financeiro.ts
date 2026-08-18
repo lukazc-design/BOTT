@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { funcionarios, lancamentos } from '@/lib/db/schema'
+import { funcionarios, lancamentos, orcamentos } from '@/lib/db/schema'
 import { and, desc, eq, gte, lte } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { randomUUID } from 'crypto'
@@ -180,6 +180,47 @@ export async function pagarSalario(funcionarioId: string, valor?: number, data?:
     valor: total,
     data,
     funcionarioId,
+  })
+}
+
+// Registra o recebimento de um orçamento como receita no fluxo de caixa.
+// Idempotente: se já houver receita vinculada ao orçamento, não duplica.
+export async function receberOrcamento(orcamentoId: string, valor?: number, data?: string) {
+  const userId = await getUserId()
+  const [orc] = await db
+    .select({ id: orcamentos.id, totalVenda: orcamentos.totalVenda, clienteNome: orcamentos.clienteNome })
+    .from(orcamentos)
+    .where(and(eq(orcamentos.id, orcamentoId), eq(orcamentos.userId, userId)))
+    .limit(1)
+  if (!orc) return { ok: false as const, mensagem: 'Orçamento não encontrado.' }
+
+  // Evita recebimento em duplicidade
+  const [jaRecebido] = await db
+    .select({ id: lancamentos.id })
+    .from(lancamentos)
+    .where(and(
+      eq(lancamentos.userId, userId),
+      eq(lancamentos.tipo, 'receita'),
+      eq(lancamentos.orcamentoId, orcamentoId),
+    ))
+    .limit(1)
+  if (jaRecebido) return { ok: false as const, mensagem: 'Este orçamento já foi recebido.' }
+
+  const total = Math.round(valor ?? orc.totalVenda)
+  if (total <= 0) return { ok: false as const, mensagem: 'Valor inválido para recebimento.' }
+
+  // Marca o orçamento como aprovado (foi pago) e lança a receita
+  await db.update(orcamentos)
+    .set({ status: 'aprovado' })
+    .where(and(eq(orcamentos.id, orcamentoId), eq(orcamentos.userId, userId)))
+
+  return salvarLancamento({
+    tipo: 'receita',
+    categoria: 'Serviço',
+    descricao: orc.clienteNome ? `Recebimento — ${orc.clienteNome}` : 'Recebimento de orçamento',
+    valor: total,
+    data,
+    orcamentoId,
   })
 }
 

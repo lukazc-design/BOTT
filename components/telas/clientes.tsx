@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   Users, Search, Plus, Phone, MessageCircle, MapPin, Pencil, Trash2, X, Save,
-  Wind, CalendarClock, FileText, Loader2, ChevronRight, AirVent,
+  Wind, CalendarClock, FileText, Loader2, ChevronRight, AirVent, HandCoins, CircleCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,6 +26,7 @@ import {
 import {
   linkTelefone, linkWhatsApp, temWhatsAppValido, formatarTelefone,
 } from '@/lib/telefone'
+import { receberOrcamento } from '@/lib/actions/financeiro'
 
 // Tipos derivados do retorno das actions
 type ClienteResumo = Awaited<ReturnType<typeof listarClientes>>[number]
@@ -76,7 +77,7 @@ function statusManutencao(proxima: Date | string | null): { label: string; cls: 
   return { label: fmtData(proxima), cls: 'border-profit/40 text-profit bg-profit/10' }
 }
 
-export function Clientes() {
+export function Clientes({ ativo, onEditarOrcamento }: { ativo?: boolean; onEditarOrcamento?: (id: string) => void }) {
   const [lista, setLista] = useState<ClienteResumo[]>([])
   const [busca, setBusca] = useState('')
   const [carregando, setCarregando] = useState(true)
@@ -94,12 +95,37 @@ export function Clientes() {
   const [formAparelho, setFormAparelho] = useState<FormAparelho | null>(null)
   const [salvandoAparelho, setSalvandoAparelho] = useState(false)
 
+  // Modal de recebimento de orçamento (lança receita no fluxo de caixa)
+  const [receber, setReceber] = useState<{ id: string; total: number } | null>(null)
+  const [valorReceber, setValorReceber] = useState('')
+  const [dataReceber, setDataReceber] = useState(new Date().toISOString().slice(0, 10))
+  const [recebendo, setRecebendo] = useState(false)
+
+  const abrirRecebimento = (o: { id: string; totalVenda: number }) => {
+    setReceber({ id: o.id, total: o.totalVenda })
+    setValorReceber((o.totalVenda / 100).toString())
+    setDataReceber(new Date().toISOString().slice(0, 10))
+  }
+
+  const handleReceber = async () => {
+    if (!receber) return
+    const centavos = valorReceber ? Math.round(parseFloat(valorReceber.replace(',', '.')) * 100) : receber.total
+    if (!centavos || centavos <= 0) { alert('Informe um valor.'); return }
+    setRecebendo(true)
+    try {
+      const res = await receberOrcamento(receber.id, centavos, dataReceber)
+      if (!res.ok) { alert(res.mensagem); return }
+      setReceber(null)
+      if (ficha) await abrirFicha(ficha.cliente.id) // atualiza o selo "Recebido"
+    } finally { setRecebendo(false) }
+  }
+
   const recarregar = useCallback(async () => {
     setCarregando(true)
     try { setLista(await listarClientes()) } finally { setCarregando(false) }
   }, [])
 
-  useEffect(() => { recarregar() }, [recarregar])
+  useEffect(() => { if (ativo !== false) recarregar() }, [ativo, recarregar])
   useEffect(() => {
     const p = carregarPerfil()
     setEmpresa(p.empresa || p.nome || '')
@@ -333,9 +359,31 @@ export function Clientes() {
                     </div>
                     <div className="divide-y divide-border">
                       {ficha.orcamentos.map(o => (
-                        <div key={o.id} className="flex items-center justify-between px-4 py-2.5 text-xs">
-                          <span className="text-muted-foreground">{fmtData(o.createdAt)} · <span className="capitalize">{o.status}</span></span>
-                          <span className="font-semibold text-sale">{fmtMoeda(o.totalVenda)}</span>
+                        <div key={o.id} className="flex items-center gap-2 px-3 py-2 text-xs">
+                          <button
+                            onClick={() => { setFicha(null); onEditarOrcamento?.(o.id) }}
+                            className="flex items-center justify-between gap-2 flex-1 min-w-0 text-left rounded-md px-1.5 py-1 hover:bg-accent transition-colors"
+                            title="Abrir para editar"
+                          >
+                            <span className="text-muted-foreground truncate">
+                              {fmtData(o.createdAt)} · <span className="capitalize">{o.status}</span>
+                            </span>
+                            <span className="font-semibold text-sale shrink-0">{fmtMoeda(o.totalVenda)}</span>
+                            <Pencil size={12} className="text-muted-foreground shrink-0" />
+                          </button>
+                          {o.recebido ? (
+                            <Badge variant="outline" className="text-[10px] border-profit/40 text-profit bg-profit/10 shrink-0 gap-1">
+                              <CircleCheck size={11} /> Recebido
+                            </Badge>
+                          ) : (
+                            <button
+                              onClick={() => abrirRecebimento(o)}
+                              className="flex items-center gap-1 rounded-md border border-profit/40 text-profit hover:bg-profit/10 px-2 py-1 shrink-0 font-medium transition-colors"
+                              title="Registrar recebimento no fluxo de caixa"
+                            >
+                              <HandCoins size={12} /> Receber
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -467,6 +515,32 @@ export function Clientes() {
             <Button variant="outline" onClick={() => setFormAparelho(null)} className="gap-1.5"><X size={14} /> Cancelar</Button>
             <Button onClick={handleSalvarAparelho} disabled={salvandoAparelho} className="gap-1.5">
               {salvandoAparelho ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Modal de recebimento (vincula ao fluxo de caixa) ─────────────── */}
+      <Dialog open={!!receber} onOpenChange={v => { if (!v) setReceber(null) }}>
+        <DialogContent className="w-full max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><HandCoins size={18} className="text-profit" /> Registrar recebimento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Valor recebido (R$)</Label>
+              <Input value={valorReceber} onChange={e => setValorReceber(e.target.value)} className="h-11 text-lg font-semibold" placeholder="0,00" inputMode="decimal" autoFocus />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Data do recebimento</Label>
+              <Input type="date" value={dataReceber} onChange={e => setDataReceber(e.target.value)} className="h-10" />
+            </div>
+            <p className="text-[11px] text-muted-foreground">Entra como receita no fluxo de caixa e marca o orçamento como aprovado.</p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setReceber(null)} className="gap-1.5"><X size={14} /> Cancelar</Button>
+            <Button onClick={handleReceber} disabled={recebendo} className="gap-1.5 bg-profit text-white hover:bg-profit/90">
+              {recebendo ? <Loader2 size={14} className="animate-spin" /> : <HandCoins size={14} />} Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>

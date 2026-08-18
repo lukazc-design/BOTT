@@ -19,6 +19,7 @@ import { ehAdmin, registrarAcesso, pingAtividade } from '@/lib/actions/admin'
 import { Loader2, CheckCircle2 } from 'lucide-react'
 import type { EstadoChat } from '@/components/telas/novo-orcamento'
 import type { Orcamento } from '@/lib/tipos'
+import { carregarOrcamentos } from '@/lib/storage'
 
 type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'perfil' | 'admin'
 
@@ -168,6 +169,19 @@ export default function Home() {
     navegar('novo-orcamento')
   }, [navegar])
 
+  // Abre para edição a partir de um id (usado pela ficha do cliente).
+  // Busca o orçamento completo no espelho local; se não achar, cai no histórico.
+  const handleEditarOrcamentoPorId = useCallback((id: string) => {
+    const orc = carregarOrcamentos().find(o => o.id === id)
+    if (orc) {
+      handleEditarNoChat(orc)
+    } else {
+      setAbrirOrcId(id)
+      setAbrirOrcNonce(n => n + 1)
+      navegar('historico')
+    }
+  }, [handleEditarNoChat, navegar])
+
   // Carregando sessao
   if (isPending || !session?.user) {
     return (
@@ -199,9 +213,11 @@ export default function Home() {
           className={pagina === 'dashboard' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
         >
           <Dashboard
+            ativo={pagina === 'dashboard'}
             onNovoOrcamento={() => navegar('novo-orcamento')}
             onAbrirHistorico={() => navegar('historico')}
             onAbrirOrcamento={handleAbrirOrcamento}
+            onNavegar={navegar}
           />
         </div>
         <div
@@ -221,28 +237,28 @@ export default function Home() {
           onScroll={() => salvarScroll('historico')}
           className={pagina === 'historico' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
         >
-          <Historico onEditarNoChat={handleEditarNoChat} abrirId={abrirOrcId} abrirNonce={abrirOrcNonce} />
+          <Historico ativo={pagina === 'historico'} onEditarNoChat={handleEditarNoChat} abrirId={abrirOrcId} abrirNonce={abrirOrcNonce} />
         </div>
         <div
           ref={el => { scrollRefs.current.clientes = el }}
           onScroll={() => salvarScroll('clientes')}
           className={pagina === 'clientes' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
         >
-          <Clientes />
+          <Clientes ativo={pagina === 'clientes'} onEditarOrcamento={handleEditarOrcamentoPorId} />
         </div>
         <div
           ref={el => { scrollRefs.current['fluxo-caixa'] = el }}
           onScroll={() => salvarScroll('fluxo-caixa')}
           className={pagina === 'fluxo-caixa' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
         >
-          <FluxoCaixa />
+          <FluxoCaixa ativo={pagina === 'fluxo-caixa'} />
         </div>
         <div
           ref={el => { scrollRefs.current.funcionarios = el }}
           onScroll={() => salvarScroll('funcionarios')}
           className={pagina === 'funcionarios' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
         >
-          <Funcionarios />
+          <Funcionarios ativo={pagina === 'funcionarios'} />
         </div>
         <div
           ref={el => { scrollRefs.current.perfil = el }}

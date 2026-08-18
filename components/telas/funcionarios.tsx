@@ -39,7 +39,7 @@ const FORM_VAZIO: FuncionarioInput = {
   nome: '', funcao: 'Ajudante', telefone: '', salario: 0, diaPagamento: 5, ativo: true, observacoes: '',
 }
 
-export function Funcionarios() {
+export function Funcionarios({ ativo }: { ativo?: boolean }) {
   const [lista, setLista] = useState<Funcionario[]>([])
   const [carregando, setCarregando] = useState(true)
   const [form, setForm] = useState<FuncionarioInput | null>(null)
@@ -57,7 +57,7 @@ export function Funcionarios() {
     try { setLista(await listarFuncionarios()) } finally { setCarregando(false) }
   }, [])
 
-  useEffect(() => { recarregar() }, [recarregar])
+  useEffect(() => { if (ativo !== false) recarregar() }, [ativo, recarregar])
 
   const abrirNovo = () => { setForm({ ...FORM_VAZIO }); setSalarioReais('') }
   const abrirEditar = (f: Funcionario) => {

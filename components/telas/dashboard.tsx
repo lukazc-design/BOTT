@@ -27,17 +27,20 @@ function fmt(v: number) {
 }
 
 interface DashboardProps {
+  ativo?: boolean
   onNovoOrcamento: () => void
   onAbrirHistorico: () => void
   onAbrirOrcamento?: (o: Orcamento) => void
+  onNavegar?: (p: string) => void
 }
 
-export function Dashboard({ onNovoOrcamento, onAbrirHistorico, onAbrirOrcamento }: DashboardProps) {
+export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrcamento }: DashboardProps) {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
 
+  // Recarrega sempre que a aba fica ativa (dados podem ter mudado em outra tela)
   useEffect(() => {
-    setOrcamentos(carregarOrcamentos())
-  }, [])
+    if (ativo !== false) setOrcamentos(carregarOrcamentos())
+  }, [ativo])
 
   const aprovados     = orcamentos.filter(o => o.status === 'aprovado')
   const totalFaturado = aprovados.reduce((s, o) => s + o.totalVenda, 0)

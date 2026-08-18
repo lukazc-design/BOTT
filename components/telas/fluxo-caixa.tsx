@@ -38,7 +38,7 @@ function lancamentoVazio(tipo: 'receita' | 'despesa'): LancamentoInput {
   return { tipo, categoria: tipo === 'receita' ? 'Serviço' : 'Material', descricao: '', valor: 0, data: hojeISO() }
 }
 
-export function FluxoCaixa() {
+export function FluxoCaixa({ ativo }: { ativo?: boolean }) {
   const hoje = new Date()
   const [ano, setAno] = useState(hoje.getFullYear())
   const [mes, setMes] = useState(hoje.getMonth())
@@ -59,7 +59,7 @@ export function FluxoCaixa() {
     } finally { setCarregando(false) }
   }, [ano, mes])
 
-  useEffect(() => { recarregar() }, [recarregar])
+  useEffect(() => { if (ativo !== false) recarregar() }, [ativo, recarregar])
 
   const mudarMes = (delta: number) => {
     const d = new Date(ano, mes + delta, 1)
