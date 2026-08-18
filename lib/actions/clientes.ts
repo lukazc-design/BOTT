@@ -43,9 +43,9 @@ export type AparelhoInput = {
   tensao?: string
   gas?: string
   ambiente?: string
-  dataInstalacao?: string  // '' = sem data
+  dataInstalacao?: string | null  // '' ou null = sem data
   intervaloLimpezaMeses?: number
-  ultimaLimpeza?: string    // '' = sem data
+  ultimaLimpeza?: string | null    // '' ou null = sem data
   observacoes?: string
 }
 

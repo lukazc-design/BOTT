@@ -21,7 +21,7 @@ import { carregarPerfil } from '@/lib/storage'
 import {
   listarClientes, obterCliente, salvarCliente, excluirCliente,
   salvarAparelho, excluirAparelho,
-  type ClienteInput, type AparelhoInput,
+  type ClienteInput,
 } from '@/lib/actions/clientes'
 import {
   linkTelefone, linkWhatsApp, temWhatsAppValido, formatarTelefone,
@@ -31,6 +31,27 @@ import {
 type ClienteResumo = Awaited<ReturnType<typeof listarClientes>>[number]
 type FichaCliente = NonNullable<Awaited<ReturnType<typeof obterCliente>>>
 type Aparelho = FichaCliente['aparelhos'][number]
+
+// Tipo do formulário de aparelho: datas sempre string ('' = vazio) para o <input type="date">
+type FormAparelho = {
+  id?: string
+  clienteId: string
+  tipo: string
+  marca: string
+  modelo: string
+  btu: number
+  tensao: string
+  gas: string
+  ambiente: string
+  dataInstalacao: string
+  intervaloLimpezaMeses: number
+  ultimaLimpeza: string
+  observacoes: string
+}
+const APARELHO_VAZIO = (clienteId: string): FormAparelho => ({
+  clienteId, tipo: 'Split', marca: '', modelo: '', btu: 9000, tensao: '', gas: '',
+  ambiente: '', dataInstalacao: '', intervaloLimpezaMeses: 6, ultimaLimpeza: '', observacoes: '',
+})
 
 const TIPOS_APARELHO = ['Split', 'Split Inverter', 'Janela', 'Cassete', 'Piso-teto', 'Multi-split']
 const INTERVALOS = [
@@ -70,7 +91,7 @@ export function Clientes() {
   const [salvandoCliente, setSalvandoCliente] = useState(false)
 
   // Formulário de aparelho
-  const [formAparelho, setFormAparelho] = useState<AparelhoInput | null>(null)
+  const [formAparelho, setFormAparelho] = useState<FormAparelho | null>(null)
   const [salvandoAparelho, setSalvandoAparelho] = useState(false)
 
   const recarregar = useCallback(async () => {
@@ -275,7 +296,7 @@ export function Clientes() {
                 <div className="rounded-xl border border-border bg-card overflow-hidden">
                   <div className="px-4 py-2.5 bg-muted/40 border-b border-border flex items-center justify-between">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Aparelhos</p>
-                    <button onClick={() => setFormAparelho({ clienteId: ficha.cliente.id, tipo: 'Split', intervaloLimpezaMeses: 6, btu: 9000 })} className="flex items-center gap-1 text-xs text-primary font-medium hover:underline"><Plus size={13} /> Adicionar</button>
+                    <button onClick={() => setFormAparelho(APARELHO_VAZIO(ficha.cliente.id))} className="flex items-center gap-1 text-xs text-primary font-medium hover:underline"><Plus size={13} /> Adicionar</button>
                   </div>
                   <div className="p-3 space-y-2">
                     {ficha.aparelhos.length === 0 ? (
@@ -290,7 +311,7 @@ export function Clientes() {
                               <p className="text-xs text-muted-foreground mt-0.5">{[ap.ambiente, ap.tensao, ap.gas].filter(Boolean).join(' · ') || 'Sem detalhes'}</p>
                             </div>
                             <div className="flex gap-1 shrink-0">
-                              <button onClick={() => setFormAparelho({ id: ap.id, clienteId: ficha.cliente.id, tipo: ap.tipo, marca: ap.marca, modelo: ap.modelo, btu: ap.btu, tensao: ap.tensao, gas: ap.gas, ambiente: ap.ambiente, intervaloLimpezaMeses: ap.intervaloLimpezaMeses, dataInstalacao: ap.dataInstalacao ? new Date(ap.dataInstalacao).toISOString().slice(0, 10) : '', ultimaLimpeza: ap.ultimaLimpeza ? new Date(ap.ultimaLimpeza).toISOString().slice(0, 10) : '', observacoes: ap.observacoes })} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground" aria-label="Editar aparelho"><Pencil size={12} /></button>
+                              <button onClick={() => setFormAparelho({ id: ap.id, clienteId: ficha.cliente.id, tipo: ap.tipo ?? 'Split', marca: ap.marca ?? '', modelo: ap.modelo ?? '', btu: ap.btu ?? 0, tensao: ap.tensao ?? '', gas: ap.gas ?? '', ambiente: ap.ambiente ?? '', intervaloLimpezaMeses: ap.intervaloLimpezaMeses ?? 6, dataInstalacao: ap.dataInstalacao ? new Date(ap.dataInstalacao).toISOString().slice(0, 10) : '', ultimaLimpeza: ap.ultimaLimpeza ? new Date(ap.ultimaLimpeza).toISOString().slice(0, 10) : '', observacoes: ap.observacoes ?? '' })} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground" aria-label="Editar aparelho"><Pencil size={12} /></button>
                               <button onClick={() => handleExcluirAparelho(ap.id)} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive" aria-label="Remover aparelho"><Trash2 size={12} /></button>
                             </div>
                           </div>
@@ -392,49 +413,49 @@ export function Clientes() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Tipo</Label>
-                  <Select value={formAparelho.tipo} onValueChange={v => setFormAparelho({ ...formAparelho!, tipo: v })}>
+                  <Select value={formAparelho.tipo} onValueChange={v => setFormAparelho(p => p && { ...p, tipo: v ?? 'Split' })}>
                     <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>{TIPOS_APARELHO.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">BTU</Label>
-                  <Input type="number" value={formAparelho.btu ?? 0} onChange={e => setFormAparelho({ ...formAparelho!, btu: Number(e.target.value) })} className="h-10" placeholder="9000" inputMode="numeric" />
+                  <Input type="number" value={formAparelho.btu ?? 0} onChange={e => setFormAparelho(p => p && { ...p, btu: Number(e.target.value) })} className="h-10" placeholder="9000" inputMode="numeric" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Marca</Label>
-                  <Input value={formAparelho.marca ?? ''} onChange={e => setFormAparelho({ ...formAparelho!, marca: e.target.value })} className="h-10" placeholder="LG, Samsung..." />
+                  <Input value={formAparelho.marca ?? ''} onChange={e => setFormAparelho(p => p && { ...p, marca: e.target.value })} className="h-10" placeholder="LG, Samsung..." />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Ambiente</Label>
-                  <Input value={formAparelho.ambiente ?? ''} onChange={e => setFormAparelho({ ...formAparelho!, ambiente: e.target.value })} className="h-10" placeholder="Sala, Quarto..." />
+                  <Input value={formAparelho.ambiente ?? ''} onChange={e => setFormAparelho(p => p && { ...p, ambiente: e.target.value })} className="h-10" placeholder="Sala, Quarto..." />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Tensão</Label>
-                  <Input value={formAparelho.tensao ?? ''} onChange={e => setFormAparelho({ ...formAparelho!, tensao: e.target.value })} className="h-10" placeholder="220V" />
+                  <Input value={formAparelho.tensao ?? ''} onChange={e => setFormAparelho(p => p && { ...p, tensao: e.target.value })} className="h-10" placeholder="220V" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Gás</Label>
-                  <Input value={formAparelho.gas ?? ''} onChange={e => setFormAparelho({ ...formAparelho!, gas: e.target.value })} className="h-10" placeholder="R410A, R32..." />
+                  <Input value={formAparelho.gas ?? ''} onChange={e => setFormAparelho(p => p && { ...p, gas: e.target.value })} className="h-10" placeholder="R410A, R32..." />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Instalação</Label>
-                  <Input type="date" value={formAparelho.dataInstalacao ?? ''} onChange={e => setFormAparelho({ ...formAparelho!, dataInstalacao: e.target.value })} className="h-10" />
+                  <Input type="date" value={formAparelho.dataInstalacao ?? ''} onChange={e => setFormAparelho(p => p && { ...p, dataInstalacao: e.target.value })} className="h-10" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Última limpeza</Label>
-                  <Input type="date" value={formAparelho.ultimaLimpeza ?? ''} onChange={e => setFormAparelho({ ...formAparelho!, ultimaLimpeza: e.target.value })} className="h-10" />
+                  <Input type="date" value={formAparelho.ultimaLimpeza ?? ''} onChange={e => setFormAparelho(p => p && { ...p, ultimaLimpeza: e.target.value })} className="h-10" />
                 </div>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Intervalo de limpeza</Label>
-                <Select value={String(formAparelho.intervaloLimpezaMeses ?? 6)} onValueChange={v => setFormAparelho({ ...formAparelho!, intervaloLimpezaMeses: Number(v) })}>
+                <Select value={String(formAparelho.intervaloLimpezaMeses ?? 6)} onValueChange={v => setFormAparelho(p => p && { ...p, intervaloLimpezaMeses: Number(v) })}>
                   <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>{INTERVALOS.map(i => <SelectItem key={i.v} value={String(i.v)}>{i.label}</SelectItem>)}</SelectContent>
                 </Select>
