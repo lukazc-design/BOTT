@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Trash2, X, Save, Loader2,
-  ChevronLeft, ChevronRight, ArrowDownCircle, ArrowUpCircle, Calendar,
+  ChevronLeft, ChevronRight, ArrowDownCircle, ArrowUpCircle, Calendar, Pencil,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -70,6 +70,21 @@ export function FluxoCaixa({ ativo }: { ativo?: boolean }) {
   const abrirNovo = (tipo: 'receita' | 'despesa') => {
     setForm(lancamentoVazio(tipo))
     setValorReais('')
+  }
+
+  // Abre o lançamento existente para ver o detalhe e editar
+  const abrirEdicao = (l: Lancamento) => {
+    setForm({
+      id: l.id,
+      tipo: l.tipo as 'receita' | 'despesa',
+      categoria: l.categoria,
+      descricao: l.descricao ?? '',
+      valor: l.valor,
+      data: new Date(l.data).toISOString().slice(0, 10),
+      funcionarioId: l.funcionarioId,
+      orcamentoId: l.orcamentoId,
+    })
+    setValorReais((l.valor / 100).toString())
   }
 
   const handleSalvar = async () => {
@@ -202,22 +217,28 @@ export function FluxoCaixa({ ativo }: { ativo?: boolean }) {
               ) : (
                 <div className="space-y-2">
                   {lista.map(l => (
-                    <div key={l.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-                      <div className={cn(
-                        'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
-                        l.tipo === 'receita' ? 'bg-profit/10 text-profit' : 'bg-destructive/10 text-destructive'
-                      )}>
-                        {l.tipo === 'receita' ? <ArrowUpCircle size={18} /> : <ArrowDownCircle size={18} />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{l.descricao || l.categoria}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {l.categoria} · {new Date(l.data).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                      <span className={cn('text-sm font-bold shrink-0', l.tipo === 'receita' ? 'text-profit' : 'text-destructive')}>
-                        {l.tipo === 'receita' ? '+' : '-'}{fmtMoeda(l.valor)}
-                      </span>
+                    <div key={l.id} className="flex items-center gap-2 rounded-xl border border-border bg-card p-3">
+                      <button
+                        onClick={() => abrirEdicao(l)}
+                        className="flex items-center gap-3 min-w-0 flex-1 text-left rounded-lg hover:bg-accent/50 -m-1 p-1 transition-colors"
+                        title="Ver detalhes e editar"
+                      >
+                        <div className={cn(
+                          'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
+                          l.tipo === 'receita' ? 'bg-profit/10 text-profit' : 'bg-destructive/10 text-destructive'
+                        )}>
+                          {l.tipo === 'receita' ? <ArrowUpCircle size={18} /> : <ArrowDownCircle size={18} />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{l.descricao || l.categoria}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {l.categoria} · {new Date(l.data).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <span className={cn('text-sm font-bold shrink-0', l.tipo === 'receita' ? 'text-profit' : 'text-destructive')}>
+                          {l.tipo === 'receita' ? '+' : '-'}{fmtMoeda(l.valor)}
+                        </span>
+                      </button>
                       <button onClick={() => handleExcluir(l.id)} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive shrink-0" aria-label="Excluir lançamento">
                         <Trash2 size={14} />
                       </button>
@@ -235,13 +256,38 @@ export function FluxoCaixa({ ativo }: { ativo?: boolean }) {
         <DialogContent className="w-full max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {form?.tipo === 'receita'
-                ? <><ArrowUpCircle size={18} className="text-profit" /> Nova receita</>
-                : <><ArrowDownCircle size={18} className="text-destructive" /> Nova despesa</>}
+              {form?.id
+                ? <><Pencil size={16} className="text-primary" /> Editar lançamento</>
+                : form?.tipo === 'receita'
+                  ? <><ArrowUpCircle size={18} className="text-profit" /> Nova receita</>
+                  : <><ArrowDownCircle size={18} className="text-destructive" /> Nova despesa</>}
             </DialogTitle>
           </DialogHeader>
           {form && (
             <div className="space-y-3">
+              {/* Seletor de tipo — permite corrigir receita/despesa ao editar */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForm(p => p && { ...p, tipo: 'receita', categoria: CATEGORIAS_RECEITA.includes(p.categoria ?? '') ? p.categoria : 'Serviço' })}
+                  className={cn(
+                    'flex items-center justify-center gap-1.5 h-10 rounded-lg border text-sm font-medium transition-colors',
+                    form.tipo === 'receita' ? 'border-profit bg-profit/10 text-profit' : 'border-border text-muted-foreground hover:bg-accent'
+                  )}
+                >
+                  <ArrowUpCircle size={15} /> Receita
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm(p => p && { ...p, tipo: 'despesa', categoria: CATEGORIAS_DESPESA.includes(p.categoria ?? '') ? p.categoria : 'Material' })}
+                  className={cn(
+                    'flex items-center justify-center gap-1.5 h-10 rounded-lg border text-sm font-medium transition-colors',
+                    form.tipo === 'despesa' ? 'border-destructive bg-destructive/10 text-destructive' : 'border-border text-muted-foreground hover:bg-accent'
+                  )}
+                >
+                  <ArrowDownCircle size={15} /> Despesa
+                </button>
+              </div>
               <div className="space-y-1">
                 <Label className="text-xs">Valor (R$) *</Label>
                 <Input
@@ -274,11 +320,22 @@ export function FluxoCaixa({ ativo }: { ativo?: boolean }) {
               </div>
             </div>
           )}
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" onClick={() => setForm(null)} className="gap-1.5"><X size={14} /> Cancelar</Button>
-            <Button onClick={handleSalvar} disabled={salvando} className="gap-1.5">
-              {salvando ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Salvar
-            </Button>
+          <DialogFooter className="gap-2 sm:gap-2 sm:justify-between">
+            {form?.id ? (
+              <Button
+                variant="outline"
+                onClick={async () => { const id = form.id!; setForm(null); await handleExcluir(id) }}
+                className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 size={14} /> Excluir
+              </Button>
+            ) : <span className="hidden sm:block" />}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setForm(null)} className="gap-1.5"><X size={14} /> Cancelar</Button>
+              <Button onClick={handleSalvar} disabled={salvando} className="gap-1.5">
+                {salvando ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Salvar
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import {
   TrendingUp, TrendingDown, FileText, Wallet, AlertCircle, Plus, Thermometer,
-  Sparkles, Users, HardHat, ArrowRight, PiggyBank,
+  Sparkles, Users, HardHat, ArrowRight, PiggyBank, HelpCircle,
 } from 'lucide-react'
+import { GuiaRapido } from '@/components/telas/guia-rapido'
 import { carregarOrcamentos } from '@/lib/storage'
 import { MAX_ORCAMENTOS } from '@/lib/tipos'
 import type { Orcamento, ResumoDashboard } from '@/lib/tipos'
@@ -55,6 +56,7 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
   const [resumo, setResumo] = useState<ResumoDashboard | null>(null)
   const [carregando, setCarregando] = useState(true)
+  const [guiaAberto, setGuiaAberto] = useState(false)
 
   useEffect(() => {
     if (ativo === false) return
@@ -90,10 +92,13 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
           <p className="text-muted-foreground text-sm mt-0.5">Seu negócio de refrigeração num relance</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button onClick={() => setGuiaAberto(true)} variant="outline" className="gap-2"><HelpCircle size={16} /> Guia</Button>
           <Button onClick={onNovoOrcamento} className="gap-2"><Plus size={16} /> Novo Orçamento</Button>
           <Button onClick={onNovoOrcamento} className="gap-2 bg-blue-800 text-white hover:bg-blue-900"><Sparkles size={16} /> IA</Button>
         </div>
       </div>
+
+      <GuiaRapido open={guiaAberto} onOpenChange={setGuiaAberto} onNavegar={onNavegar} />
 
       {/* Alerta de limite */}
       {vagas <= 3 && (

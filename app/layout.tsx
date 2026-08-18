@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { TEMA_INLINE_SCRIPT } from '@/lib/tema'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -26,7 +27,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" className="bg-background dark">
+    <html lang="pt-BR" className="bg-background dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: TEMA_INLINE_SCRIPT }} />
+      </head>
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
         {children}
         <Analytics />

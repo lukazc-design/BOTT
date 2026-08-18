@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   Thermometer, FileText, History, Settings, LayoutGrid, ShieldCheck, Users, Wallet, HardHat, Tags,
-  Wifi, WifiOff, Menu, X, ChevronRight, AlertCircle, CheckCircle2, Loader2, RefreshCw, LogOut,
+  Wifi, WifiOff, Menu, X, ChevronRight, AlertCircle, CheckCircle2, Loader2, RefreshCw, LogOut, Sun, Moon,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { carregarPerfil } from '@/lib/storage'
 import { signOut } from '@/lib/auth-client'
+import { obterTema, alternarTema, type Tema } from '@/lib/tema'
 
 type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'tabela-precos' | 'perfil' | 'admin'
 
@@ -49,6 +50,13 @@ export function Sidebar({ paginaAtiva, onNavegar, ollamaOnline, ollamaErro, olla
   const [diagCarregando, setDiagCarregando] = useState(false)
   const [diagResult, setDiagResult] = useState<DiagResult | null>(null)
   const [saindo, setSaindo] = useState(false)
+  const [tema, setTema] = useState<Tema>('dark')
+
+  useEffect(() => { setTema(obterTema()) }, [])
+
+  function trocarTema() {
+    setTema(alternarTema())
+  }
 
   async function sair() {
     setSaindo(true)
@@ -231,6 +239,16 @@ export function Sidebar({ paginaAtiva, onNavegar, ollamaOnline, ollamaErro, olla
               )}
             </div>
           )}
+
+          {/* Alternar tema claro/escuro */}
+          <button
+            onClick={trocarTema}
+            className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors mt-1"
+          >
+            {tema === 'dark'
+              ? <><Sun size={15} /> Tema claro</>
+              : <><Moon size={15} /> Tema escuro</>}
+          </button>
 
           {/* Botao Sair — encerra a sessao e volta para a tela de login */}
           <button

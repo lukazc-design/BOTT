@@ -61,7 +61,7 @@ interface IAItemExtra {
   precoCusto?: number
   precoVenda?: number
   categoria?: 'material' | 'servico' | 'outros'
-  _op: 'add' | 'remove'
+  _op: 'add' | 'remove' | 'update'
 }
 
 interface IAAcao {
@@ -1090,12 +1090,38 @@ export function NovoOrcamento({
     // Processa itens extras (materiais/custos avulsos) — estado separado, sobrevive à regeneração
     if (acao.itensExtras && acao.itensExtras.length > 0) {
       const removes = acao.itensExtras.filter(e => e._op === 'remove')
-      const adds = acao.itensExtras.filter(e => e._op !== 'remove')
+      const updates = acao.itensExtras.filter(e => e._op === 'update')
+      const adds = acao.itensExtras.filter(e => e._op === 'add')
 
       setItensExtras(prev => {
         let lista = [...prev]
         for (const extra of removes) {
           lista = lista.filter(it => !itemCasaComAlvo(it.descricao, extra.descricao))
+        }
+        // update: acha o item pelo nome e ajusta só os campos enviados; se não achar, vira add
+        for (const extra of updates) {
+          const idx = lista.findIndex(it => itemCasaComAlvo(it.descricao, extra.descricao))
+          if (idx >= 0) {
+            const atual = lista[idx]
+            lista[idx] = {
+              ...atual,
+              quantidade: extra.quantidade ?? atual.quantidade,
+              unidade: extra.unidade ?? atual.unidade,
+              precoCusto: extra.precoCusto ?? atual.precoCusto,
+              precoVenda: extra.precoVenda ?? atual.precoVenda,
+              categoria: extra.categoria ?? atual.categoria,
+            }
+          } else {
+            lista = [...lista, {
+              id: `extra-${crypto.randomUUID()}`,
+              descricao: extra.descricao,
+              quantidade: extra.quantidade ?? 1,
+              unidade: extra.unidade ?? 'un',
+              precoCusto: extra.precoCusto ?? 0,
+              precoVenda: extra.precoVenda ?? 0,
+              categoria: extra.categoria ?? 'outros',
+            }]
+          }
         }
         for (const extra of adds) {
           lista = [...lista, {
