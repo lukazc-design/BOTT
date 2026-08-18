@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
-  Thermometer, FileText, History, Settings, LayoutGrid, ShieldCheck, Users,
+  Thermometer, FileText, History, Settings, LayoutGrid, ShieldCheck, Users, Wallet, HardHat,
   Wifi, WifiOff, Menu, X, ChevronRight, AlertCircle, CheckCircle2, Loader2, RefreshCw, LogOut,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { carregarPerfil } from '@/lib/storage'
 import { signOut } from '@/lib/auth-client'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'perfil' | 'admin'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'perfil' | 'admin'
 
 interface SidebarProps {
   paginaAtiva: Pagina
@@ -35,6 +35,8 @@ const NAV = [
   { id: 'novo-orcamento' as Pagina,  label: 'Novo Orçamento', icon: FileText     },
   { id: 'clientes' as Pagina,        label: 'Clientes',       icon: Users        },
   { id: 'historico' as Pagina,       label: 'Histórico',      icon: History      },
+  { id: 'fluxo-caixa' as Pagina,     label: 'Fluxo de Caixa', icon: Wallet       },
+  { id: 'funcionarios' as Pagina,    label: 'Funcionários',   icon: HardHat      },
   { id: 'perfil' as Pagina,          label: 'Meu Perfil',     icon: Settings     },
 ]
 

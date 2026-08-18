@@ -1696,9 +1696,11 @@ export function NovoOrcamento({
                 orcamentoSalvo={orcamentoSalvo}
                 onEquipamentosChange={setEquipamentos}
                 onItensChange={setItens}
-                onClienteNomeChange={setClienteNome}
+                onClienteNomeChange={(v) => { setClienteNome(v); setClienteVinculadoId(null) }}
                 onClienteEnderecoChange={setClienteEndereco}
                 onClienteTelefoneChange={setClienteTelefone}
+                clienteVinculadoId={clienteVinculadoId}
+                onVincularCliente={vincularCliente}
                 onModoVisualizacaoChange={setModoVisualizacao}
                 onSalvar={salvar}
                 itensExtras={itensExtras}

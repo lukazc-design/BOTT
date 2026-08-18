@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/lib/auth-client'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'perfil' | 'admin'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'perfil' | 'admin'
 
 interface NavBottomProps {
   paginaAtiva: Pagina
