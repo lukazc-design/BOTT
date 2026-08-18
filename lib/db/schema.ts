@@ -118,11 +118,53 @@ export const aiUsage = pgTable('ai_usage', {
   createdAt: timestamp('createdAt').notNull(),
 })
 
+// ─── OrçaFacil: Clientes (entidade central da gestão) ───────────────────────
+// Cada cliente é reaproveitável: concentra aparelhos, atendimentos e orçamentos.
+
+export const clientes = pgTable('clientes', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  nome: text('nome').notNull(),
+  telefone: text('telefone').notNull().default(''),   // principal (usado no WhatsApp/ligar)
+  telefone2: text('telefone2').notNull().default(''),
+  email: text('email').notNull().default(''),
+  endereco: text('endereco').notNull().default(''),
+  bairro: text('bairro').notNull().default(''),
+  cidade: text('cidade').notNull().default(''),
+  observacoes: text('observacoes').notNull().default(''),
+  createdAt: timestamp('createdAt').notNull(),
+  updatedAt: timestamp('updatedAt').notNull(),
+})
+
+// ─── OrçaFacil: Aparelhos instalados no cliente ─────────────────────────────
+// Base dos alertas de manutenção: cada aparelho tem intervalo e próxima data.
+
+export const aparelhos = pgTable('aparelhos', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  clienteId: text('clienteId').notNull(),
+  tipo: text('tipo').notNull().default('Split'),       // Split, Janela, Cassete, Piso-teto...
+  marca: text('marca').notNull().default(''),
+  modelo: text('modelo').notNull().default(''),
+  btu: integer('btu').notNull().default(0),
+  tensao: text('tensao').notNull().default(''),        // 110V / 220V
+  gas: text('gas').notNull().default(''),              // R410A, R32...
+  ambiente: text('ambiente').notNull().default(''),    // "Sala", "Quarto casal"...
+  dataInstalacao: timestamp('dataInstalacao'),
+  intervaloLimpezaMeses: integer('intervaloLimpezaMeses').notNull().default(6),
+  ultimaLimpeza: timestamp('ultimaLimpeza'),
+  proximaManutencao: timestamp('proximaManutencao'),
+  observacoes: text('observacoes').notNull().default(''),
+  createdAt: timestamp('createdAt').notNull(),
+  updatedAt: timestamp('updatedAt').notNull(),
+})
+
 // ─── OrçaFacil: Orcamentos ──────────────────────────────────────────────────
 
 export const orcamentos = pgTable('orcamentos', {
   id: text('id').primaryKey(),
   userId: text('userId').notNull(),
+  clienteId: text('clienteId'), // vínculo opcional ao cadastro de clientes
   clienteNome: text('clienteNome').notNull().default(''),
   clienteEndereco: text('clienteEndereco').default(''),
   clienteTelefone: text('clienteTelefone').default(''),

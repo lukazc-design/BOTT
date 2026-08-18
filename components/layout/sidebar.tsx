@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
-  Thermometer, FileText, History, Settings, LayoutGrid, ShieldCheck,
+  Thermometer, FileText, History, Settings, LayoutGrid, ShieldCheck, Users,
   Wifi, WifiOff, Menu, X, ChevronRight, AlertCircle, CheckCircle2, Loader2, RefreshCw, LogOut,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { carregarPerfil } from '@/lib/storage'
 import { signOut } from '@/lib/auth-client'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'perfil' | 'admin'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'perfil' | 'admin'
 
 interface SidebarProps {
   paginaAtiva: Pagina
@@ -33,6 +33,7 @@ interface DiagResult {
 const NAV = [
   { id: 'dashboard' as Pagina,       label: 'Geral',          icon: LayoutGrid   },
   { id: 'novo-orcamento' as Pagina,  label: 'Novo Orçamento', icon: FileText     },
+  { id: 'clientes' as Pagina,        label: 'Clientes',       icon: Users        },
   { id: 'historico' as Pagina,       label: 'Histórico',      icon: History      },
   { id: 'perfil' as Pagina,          label: 'Meu Perfil',     icon: Settings     },
 ]

@@ -1,12 +1,12 @@
 'use client'
 
-import { LayoutGrid, FilePlus2, History, Settings, LogOut, Sparkles } from 'lucide-react'
+import { LayoutGrid, FilePlus2, History, Settings, LogOut, Sparkles, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/lib/auth-client'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'perfil' | 'admin'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'perfil' | 'admin'
 
 interface NavBottomProps {
   paginaAtiva: Pagina
@@ -15,11 +15,12 @@ interface NavBottomProps {
 
 // Abas laterais (o "Novo" fica em destaque no centro, fora desta lista)
 const ESQUERDA = [
-  { id: 'dashboard' as Pagina, label: 'Geral',     icon: LayoutGrid },
-  { id: 'historico' as Pagina, label: 'Histórico', icon: History    },
+  { id: 'dashboard' as Pagina, label: 'Geral',    icon: LayoutGrid },
+  { id: 'clientes' as Pagina,  label: 'Clientes', icon: Users      },
 ]
 const DIREITA = [
-  { id: 'perfil' as Pagina, label: 'Perfil', icon: Settings },
+  { id: 'historico' as Pagina, label: 'Histórico', icon: History  },
+  { id: 'perfil' as Pagina,    label: 'Perfil',    icon: Settings },
 ]
 
 export function NavBottom({ paginaAtiva, onNavegar }: NavBottomProps) {
