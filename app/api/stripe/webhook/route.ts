@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       customer?: string
     }
     const userId = sub.metadata?.userId
-    const plano = sub.metadata?.plano === 'pro' ? 'pro' : 'basico'
+    const plano = 'mensal'
     const isAtiva = sub.status === 'active' || sub.status === 'trialing'
 
     if (userId && isAtiva) {
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       subscription?: string
     }
     const userId = session.metadata?.userId
-    const plano = session.metadata?.plano === 'pro' ? 'pro' : 'basico'
+    const plano = 'mensal'
     if (userId && session.subscription) {
       const now = new Date()
       await db

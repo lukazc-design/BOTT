@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   Thermometer, FileText, History, Settings, LayoutGrid, ShieldCheck, Users, Wallet, HardHat, Tags,
-  Wifi, WifiOff, Menu, X, ChevronRight, AlertCircle, CheckCircle2, Loader2, RefreshCw, LogOut, Sun, Moon,
+  Wifi, WifiOff, Menu, X, ChevronRight, AlertCircle, CheckCircle2, Loader2, RefreshCw, LogOut, Sun, Moon, Megaphone,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { carregarPerfil } from '@/lib/storage'
 import { signOut } from '@/lib/auth-client'
 import { obterTema, alternarTema, type Tema } from '@/lib/tema'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'tabela-precos' | 'perfil' | 'admin'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'tabela-precos' | 'perfil' | 'admin' | 'marketing'
 
 interface SidebarProps {
   paginaAtiva: Pagina
@@ -133,7 +133,12 @@ export function Sidebar({ paginaAtiva, onNavegar, ollamaOnline, ollamaErro, olla
 
         {/* Nav */}
         <nav className="flex-1 p-3 flex flex-col gap-1">
-          {(isAdmin ? [...NAV, { id: 'admin' as Pagina, label: 'Admin', icon: ShieldCheck }] : NAV).map(item => {
+          {(isAdmin
+            ? [...NAV,
+                { id: 'marketing' as Pagina, label: 'Marketing', icon: Megaphone },
+                { id: 'admin' as Pagina, label: 'Admin', icon: ShieldCheck }]
+            : NAV
+          ).map(item => {
             const Icon = item.icon
             const ativo = paginaAtiva === item.id
             return (

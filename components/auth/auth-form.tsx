@@ -99,7 +99,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         {/* Badge */}
         <div className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-medium mb-6">
           <Zap size={11} />
-          1 dia grátis. Planos a partir de R$ 15/mês
+          7 dias grátis. Depois R$ 9,99/mês
         </div>
 
         {/* Icone */}
@@ -127,7 +127,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           <ArrowRight size={18} />
         </Button>
         <p className="relative text-xs text-muted-foreground mt-3">
-          1 dia grátis — sem cartão
+          7 dias grátis — sem cartão
         </p>
       </header>
 
@@ -203,7 +203,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
             <p className="text-sm text-muted-foreground">
               {isLogin
                 ? 'Entre com seu e-mail e senha'
-                : '1 dia grátis para testar. Depois a partir de R$ 15/mês.'}
+                : '7 dias grátis para testar. Depois R$ 9,99/mês.'}
             </p>
           </div>
 

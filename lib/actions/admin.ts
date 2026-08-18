@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { aiUsage, licenses, user, session, userActivity } from '@/lib/db/schema'
 import { PLANOS, type PlanoId } from '@/lib/stripe'
-import { and, eq, gte, sql } from 'drizzle-orm'
+import { eq, gte, sql } from 'drizzle-orm'
 import { headers } from 'next/headers'
 
 // ── Configuração do Admin ───────────────────────────────────────────────────
@@ -237,8 +237,7 @@ export interface AdminStats {
   outputTokensMes: number
   custoMesUSD: number
   custoMesBRL: number
-  assinantesBasico: number
-  assinantesPro: number
+  assinantesAtivos: number
   emTrial: number
   receitaMensalBRL: number
 }
@@ -286,29 +285,20 @@ export async function getAdminStats(): Promise<AdminStats | null> {
     (inputTokensMes / 1_000_000) * PRECO_INPUT_USD_POR_MI +
     (outputTokensMes / 1_000_000) * PRECO_OUTPUT_USD_POR_MI
 
-  const [aBasico] = await db
+  const [ativos] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(licenses)
-    .where(and(eq(licenses.status, 'active'), eq(licenses.plano, 'basico')))
-
-  const [aPro] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(licenses)
-    .where(and(eq(licenses.status, 'active'), eq(licenses.plano, 'pro')))
+    .where(eq(licenses.status, 'active'))
 
   const [trial] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(licenses)
     .where(eq(licenses.status, 'trial'))
 
-  const assinantesBasico = aBasico?.n ?? 0
-  const assinantesPro = aPro?.n ?? 0
+  const assinantesAtivos = ativos?.n ?? 0
   const emTrial = trial?.n ?? 0
 
-  const receitaMensalBRL =
-    (assinantesBasico * PLANOS.basico.precoCentavos +
-      assinantesPro * PLANOS.pro.precoCentavos) /
-    100
+  const receitaMensalBRL = (assinantesAtivos * PLANOS.mensal.precoCentavos) / 100
 
   return {
     geracoesHoje: gHoje?.n ?? 0,
@@ -318,8 +308,7 @@ export async function getAdminStats(): Promise<AdminStats | null> {
     outputTokensMes,
     custoMesUSD,
     custoMesBRL: custoMesUSD * USD_PARA_BRL,
-    assinantesBasico,
-    assinantesPro,
+    assinantesAtivos,
     emTrial,
     receitaMensalBRL,
   }

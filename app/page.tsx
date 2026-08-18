@@ -14,6 +14,7 @@ import { Funcionarios } from '@/components/telas/funcionarios'
 import { TabelaPrecos } from '@/components/telas/tabela-precos'
 import { Perfil } from '@/components/telas/perfil'
 import { Admin } from '@/components/telas/admin'
+import { Marketing } from '@/components/telas/marketing'
 import { BannerLicenca } from '@/components/auth/banner-licenca'
 import { confirmarCheckout } from '@/lib/actions/licenca'
 import { ehAdmin, registrarAcesso, pingAtividade } from '@/lib/actions/admin'
@@ -22,7 +23,7 @@ import type { EstadoChat } from '@/components/telas/novo-orcamento'
 import type { Orcamento } from '@/lib/tipos'
 import { carregarOrcamentos } from '@/lib/storage'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'tabela-precos' | 'perfil' | 'admin'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'tabela-precos' | 'perfil' | 'admin' | 'marketing'
 
 export default function Home() {
   const { data: session, isPending } = useSession()
@@ -93,10 +94,10 @@ export default function Home() {
   // ── Memória de rolagem por aba ──────────────────────────────────────────
   // Cada aba lembra onde o usuário parou. Aba nunca aberta começa no topo.
   const scrollRefs = useRef<Record<Pagina, HTMLDivElement | null>>({
-    dashboard: null, 'novo-orcamento': null, historico: null, clientes: null, 'fluxo-caixa': null, funcionarios: null, 'tabela-precos': null, perfil: null, admin: null,
+    dashboard: null, 'novo-orcamento': null, historico: null, clientes: null, 'fluxo-caixa': null, funcionarios: null, 'tabela-precos': null, perfil: null, admin: null, marketing: null,
   })
   const scrollMem = useRef<Record<Pagina, number>>({
-    dashboard: 0, 'novo-orcamento': 0, historico: 0, clientes: 0, 'fluxo-caixa': 0, funcionarios: 0, 'tabela-precos': 0, perfil: 0, admin: 0,
+    dashboard: 0, 'novo-orcamento': 0, historico: 0, clientes: 0, 'fluxo-caixa': 0, funcionarios: 0, 'tabela-precos': 0, perfil: 0, admin: 0, marketing: 0,
   })
   const visitados = useRef<Set<Pagina>>(new Set())
 
@@ -282,6 +283,15 @@ export default function Home() {
             className={pagina === 'admin' ? 'flex flex-col flex-1 overflow-y-auto overflow-x-hidden' : 'hidden'}
           >
             <Admin />
+          </div>
+        )}
+        {isAdmin && (
+          <div
+            ref={el => { scrollRefs.current.marketing = el }}
+            onScroll={() => salvarScroll('marketing')}
+            className={pagina === 'marketing' ? 'flex flex-col flex-1 overflow-y-auto overflow-x-hidden' : 'hidden'}
+          >
+            <Marketing />
           </div>
         )}
       </main>

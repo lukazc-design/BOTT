@@ -31,12 +31,15 @@ export const stripe = new Stripe(chaveSecreta, {
   typescript: true,
 })
 
-// ── Teste gratis: 1 dia, com poucos orcamentos so pra experimentar ──
-export const TRIAL_DIAS = 1
-export const TRIAL_MAX_ORCAMENTOS = 5
+// ── Teste gratis: 7 dias para experimentar tudo ──
+export const TRIAL_DIAS = 7
+export const TRIAL_MAX_ORCAMENTOS = 15
 
-// ── Planos mensais ──
-export type PlanoId = 'basico' | 'pro'
+// ── Plano unico mensal ──
+export type PlanoId = 'mensal'
+
+// Valor de exibicao formatado (usado em textos da UI)
+export const PRECO_MENSAL_LABEL = 'R$ 9,99'
 
 export const PLANOS: Record<PlanoId, {
   id: PlanoId
@@ -44,16 +47,12 @@ export const PLANOS: Record<PlanoId, {
   precoCentavos: number
   maxOrcamentos: number   // limite de orcamentos salvos por mes
 }> = {
-  basico: { id: 'basico', nome: 'OrçaFacil Frio — Básico', precoCentavos: 1500, maxOrcamentos: 30 },
-  pro:    { id: 'pro',    nome: 'OrçaFacil Frio — Pro',    precoCentavos: 3000, maxOrcamentos: 100 },
+  mensal: { id: 'mensal', nome: 'OrçaFacil-Frio — Mensal', precoCentavos: 999, maxOrcamentos: 100 },
 }
 
 // Limite de orcamentos por mes conforme status/plano
-export function limiteOrcamentos(status: string, plano: string | null | undefined): number {
-  if (status === 'active') {
-    if (plano === 'pro') return PLANOS.pro.maxOrcamentos
-    return PLANOS.basico.maxOrcamentos // default basico
-  }
+export function limiteOrcamentos(status: string, _plano?: string | null): number {
+  if (status === 'active') return PLANOS.mensal.maxOrcamentos
   if (status === 'trial') return TRIAL_MAX_ORCAMENTOS
   return 0 // expirado
 }
