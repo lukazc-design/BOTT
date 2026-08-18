@@ -1,12 +1,12 @@
 'use client'
 
-import { LayoutGrid, FilePlus2, History, Settings, LogOut, Sparkles } from 'lucide-react'
+import { LayoutGrid, FilePlus2, History, Settings, LogOut, Mic, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/lib/auth-client'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'perfil' | 'admin'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'tabela-precos' | 'perfil' | 'admin'
 
 interface NavBottomProps {
   paginaAtiva: Pagina
@@ -15,11 +15,12 @@ interface NavBottomProps {
 
 // Abas laterais (o "Novo" fica em destaque no centro, fora desta lista)
 const ESQUERDA = [
-  { id: 'dashboard' as Pagina, label: 'Geral',     icon: LayoutGrid },
-  { id: 'historico' as Pagina, label: 'Histórico', icon: History    },
+  { id: 'dashboard' as Pagina, label: 'Geral',    icon: LayoutGrid },
+  { id: 'clientes' as Pagina,  label: 'Clientes', icon: Users      },
 ]
 const DIREITA = [
-  { id: 'perfil' as Pagina, label: 'Perfil', icon: Settings },
+  { id: 'historico' as Pagina, label: 'Histórico', icon: History  },
+  { id: 'perfil' as Pagina,    label: 'Perfil',    icon: Settings },
 ]
 
 export function NavBottom({ paginaAtiva, onNavegar }: NavBottomProps) {
@@ -74,18 +75,18 @@ export function NavBottom({ paginaAtiva, onNavegar }: NavBottomProps) {
             <span className="text-[9px] font-bold leading-none">Novo</span>
           </button>
 
-          {/* IA — atalho direto para o chat da IA, azul mais escuro para se destacar */}
+          {/* Voz — atalho direto para o orçamento por voz, azul mais escuro para se destacar */}
           <button
             onClick={() => onNavegar('novo-orcamento')}
-            aria-label="Chat da IA"
+            aria-label="Orçamento por voz"
             className={cn(
               'relative -top-4 flex flex-col items-center justify-center gap-0.5',
               'w-14 h-14 rounded-full bg-blue-800 text-white',
               'shadow-lg shadow-blue-900/40 ring-4 ring-sidebar transition-transform active:scale-95'
             )}
           >
-            <Sparkles size={18} strokeWidth={2.4} />
-            <span className="text-[9px] font-bold leading-none">IA</span>
+            <Mic size={18} strokeWidth={2.4} />
+            <span className="text-[9px] font-bold leading-none">Voz</span>
           </button>
         </div>
 

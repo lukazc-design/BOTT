@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils'
 import { carregarPerfil, salvarOrcamento, carregarOrcamentos } from '@/lib/storage'
 import { salvarOrcamento as salvarOrcamentoDB } from '@/lib/actions/orcamentos'
+import { listarClientes } from '@/lib/actions/clientes'
 import {
   montarEquipamento, gerarItensEquipamento, calcularTotais, gerarNumeroOrcamento,
   formatarBtu, rotuloTipo,
@@ -60,7 +61,7 @@ interface IAItemExtra {
   precoCusto?: number
   precoVenda?: number
   categoria?: 'material' | 'servico' | 'outros'
-  _op: 'add' | 'remove'
+  _op: 'add' | 'remove' | 'update'
 }
 
 interface IAAcao {
@@ -206,7 +207,7 @@ function IndicadorIALocal({ online, model, url, nuvem }: { online: boolean; mode
       >
         <Cpu size={11} />
         <span className="font-mono font-medium hidden sm:inline">{online ? model : 'Offline'}</span>
-        <span className="font-mono font-medium sm:hidden">{online ? 'IA' : 'Off'}</span>
+        <span className="font-mono font-medium sm:hidden">{online ? 'ON' : 'Off'}</span>
         {online && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />}
       </button>
       {aberto && (
@@ -218,8 +219,8 @@ function IndicadorIALocal({ online, model, url, nuvem }: { online: boolean; mode
                 <Cpu size={16} className={online ? 'text-green-400' : 'text-destructive'} />
               </div>
               <div>
-                <p className="font-semibold text-sm">{nuvem ? 'IA na nuvem (Gemini)' : 'IA rodando no seu PC'}</p>
-                <p className="text-muted-foreground text-[10px]">{nuvem ? 'Rápida e sempre online' : 'Dados 100% locais, sem internet'}</p>
+                <p className="font-semibold text-sm">{nuvem ? 'Assistente (nuvem)' : 'Assistente (local)'}</p>
+                <p className="text-muted-foreground text-[10px]">{nuvem ? 'Rápido e sempre online' : 'Dados 100% locais, sem internet'}</p>
               </div>
             </div>
             <div className="rounded-xl bg-background border border-border p-3 space-y-2">
@@ -799,6 +800,8 @@ export function NovoOrcamento({
   const [clienteNome, setClienteNome] = useState(estadoInicial?.clienteNome ?? '')
   const [clienteEndereco, setClienteEndereco] = useState(estadoInicial?.clienteEndereco ?? '')
   const [clienteTelefone, setClienteTelefone] = useState(estadoInicial?.clienteTelefone ?? '')
+  // Cliente do cadastro central vinculado a este orçamento (opcional)
+  const [clienteVinculadoId, setClienteVinculadoId] = useState<string | null>(null)
   const [observacoes, setObservacoes] = useState(estadoInicial?.observacoes ?? '')
   const [orcamentoSalvo, setOrcamentoSalvo] = useState<Orcamento | null>(estadoInicial?.orcamentoSalvo ?? null)
 
@@ -1087,12 +1090,38 @@ export function NovoOrcamento({
     // Processa itens extras (materiais/custos avulsos) — estado separado, sobrevive à regeneração
     if (acao.itensExtras && acao.itensExtras.length > 0) {
       const removes = acao.itensExtras.filter(e => e._op === 'remove')
-      const adds = acao.itensExtras.filter(e => e._op !== 'remove')
+      const updates = acao.itensExtras.filter(e => e._op === 'update')
+      const adds = acao.itensExtras.filter(e => e._op === 'add')
 
       setItensExtras(prev => {
         let lista = [...prev]
         for (const extra of removes) {
           lista = lista.filter(it => !itemCasaComAlvo(it.descricao, extra.descricao))
+        }
+        // update: acha o item pelo nome e ajusta só os campos enviados; se não achar, vira add
+        for (const extra of updates) {
+          const idx = lista.findIndex(it => itemCasaComAlvo(it.descricao, extra.descricao))
+          if (idx >= 0) {
+            const atual = lista[idx]
+            lista[idx] = {
+              ...atual,
+              quantidade: extra.quantidade ?? atual.quantidade,
+              unidade: extra.unidade ?? atual.unidade,
+              precoCusto: extra.precoCusto ?? atual.precoCusto,
+              precoVenda: extra.precoVenda ?? atual.precoVenda,
+              categoria: extra.categoria ?? atual.categoria,
+            }
+          } else {
+            lista = [...lista, {
+              id: `extra-${crypto.randomUUID()}`,
+              descricao: extra.descricao,
+              quantidade: extra.quantidade ?? 1,
+              unidade: extra.unidade ?? 'un',
+              precoCusto: extra.precoCusto ?? 0,
+              precoVenda: extra.precoVenda ?? 0,
+              categoria: extra.categoria ?? 'outros',
+            }]
+          }
         }
         for (const extra of adds) {
           lista = [...lista, {
@@ -1136,7 +1165,7 @@ export function NovoOrcamento({
         iaOnline = false
       }
     }
-    if (!iaOnline) { setErro('IA offline. Verifique se o Ollama e o ngrok estao rodando no seu PC.'); return }
+    if (!iaOnline) { setErro('Assistente offline. Verifique sua conexão e tente novamente.'); return }
 
     setErro('')
     const novaMensagem: MensagemChat = { role: 'user', content: texto, timestamp: new Date() }
@@ -1201,13 +1230,13 @@ export function NovoOrcamento({
       const data = await resp.json()
       // Bloqueio de licença: NÃO faz fallback local (evita burlar o limite)
       if (resp.status === 402) {
-        const msgErro = data.erro ?? 'Assinatura necessária para usar a IA.'
+          const msgErro = data.erro ?? 'Assinatura necessária para usar o assistente.'
         setMensagens(prev => [...prev, { role: 'assistant', content: msgErro, timestamp: new Date() }])
         setErro(msgErro)
         return
       }
       if (!resp.ok || data.erro) {
-        const msgErro = data.erro ?? 'Erro ao processar com a IA.'
+          const msgErro = data.erro ?? 'Erro ao processar o pedido.'
         // Mesmo com erro da IA, tenta parser local para não perder o orçamento
         const acaoLocal = parsearTextoLocalmente(texto)
         if (acaoLocal) {
@@ -1238,7 +1267,7 @@ export function NovoOrcamento({
         aplicarAcao(acaoLocal)
         setMensagens(prev => [...prev, { role: 'assistant', content: '(Processado localmente) ' + (acaoLocal.mensagem ?? 'Orçamento atualizado.'), timestamp: new Date() }])
       } else {
-        setMensagens(prev => [...prev, { role: 'assistant', content: `IA indisponivel: ${msg}. Verifique ngrok e Ollama.`, timestamp: new Date() }])
+        setMensagens(prev => [...prev, { role: 'assistant', content: `Assistente indisponível: ${msg}. Verifique sua conexão e tente novamente.`, timestamp: new Date() }])
         setErro(msg)
       }
     } finally {
@@ -1281,6 +1310,7 @@ export function NovoOrcamento({
     try {
       dbRes = await salvarOrcamentoDB({
         id: orc.id,
+        clienteId: clienteVinculadoId ?? undefined,
         clienteNome: orc.clienteNome,
         clienteEndereco: orc.clienteEndereco,
         clienteTelefone: orc.clienteTelefone,
@@ -1302,11 +1332,21 @@ export function NovoOrcamento({
     setSucesso(`Orcamento ${orc.numero} salvo!`)
   }
 
+  // Vincula um cliente do cadastro central: preenche os campos e guarda o id
+  const vincularCliente = (c: { id: string; nome: string; telefone: string; endereco: string } | null) => {
+    if (!c) { setClienteVinculadoId(null); return }
+    setClienteVinculadoId(c.id)
+    setClienteNome(c.nome)
+    setClienteTelefone(c.telefone)
+    if (c.endereco) setClienteEndereco(c.endereco)
+  }
+
   const limpar = () => {
     setMensagens([{ ...MENSAGEM_INICIAL, timestamp: new Date() }])
     setEquipamentos([]); setItens([]); setItensExtras([]); setDescricoesRemovidas([]); setChavesRemovidas([])
     setAjustesItens({}); setDesconto({ tipo: 'percentual', valor: 0 })
     setClienteNome(''); setClienteEndereco(''); setClienteTelefone('')
+    setClienteVinculadoId(null)
     setObservacoes(''); setErro(''); setSucesso('')
     setOrcamentoSalvo(null); setInputChat('')
     setMostrarPreview(false)
@@ -1369,7 +1409,7 @@ export function NovoOrcamento({
         <div className="flex items-center gap-2 flex-shrink-0">
           <IndicadorIALocal
             online={isNuvem ? true : ollamaOnline}
-            model={isNuvem ? 'Gemini 2.5 Flash' : perfil.ollamaModel}
+            model={isNuvem ? 'Assistente' : perfil.ollamaModel}
             url={isNuvem ? 'Vercel AI Gateway' : perfil.ollamaUrl}
             nuvem={isNuvem}
           />
@@ -1459,7 +1499,7 @@ export function NovoOrcamento({
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
-                    <span className="text-xs text-muted-foreground ml-2 font-mono">{isNuvem ? 'Gemini 2.5 Flash' : perfil.ollamaModel}</span>
+                    <span className="text-xs text-muted-foreground ml-2 font-mono">{isNuvem ? 'Assistente' : perfil.ollamaModel}</span>
                   </div>
                 </div>
               </div>
@@ -1551,7 +1591,7 @@ export function NovoOrcamento({
                       ? 'Transcrevendo fala...'
                       : ollamaOnline
                         ? 'Digite ou use o microfone — Enter envia'
-                        : 'IA offline — verifique a conexao (status na barra lateral)'
+                        : 'Assistente offline — verifique a conexão (status na barra lateral)'
                   }
                   className="min-h-[44px] max-h-36 resize-none text-sm py-2.5 leading-snug rounded-2xl"
                   disabled={processando}
@@ -1588,9 +1628,11 @@ export function NovoOrcamento({
           orcamentoSalvo={orcamentoSalvo}
           onEquipamentosChange={setEquipamentos}
           onItensChange={setItens}
-          onClienteNomeChange={setClienteNome}
+          onClienteNomeChange={(v) => { setClienteNome(v); setClienteVinculadoId(null) }}
           onClienteEnderecoChange={setClienteEndereco}
           onClienteTelefoneChange={setClienteTelefone}
+          clienteVinculadoId={clienteVinculadoId}
+          onVincularCliente={vincularCliente}
           onModoVisualizacaoChange={setModoVisualizacao}
           onSalvar={salvar}
           itensExtras={itensExtras}
@@ -1657,12 +1699,23 @@ export function NovoOrcamento({
                 <div className="w-10 h-1 rounded-full bg-border absolute top-2 left-1/2 -translate-x-1/2" />
                 <span className="text-sm font-semibold mt-1">Detalhes do Orçamento</span>
               </div>
-              <button
-                onClick={() => setDrawerAberto(false)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
-              >
-                <X size={16} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={salvar}
+                  disabled={salvando}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                >
+                  {salvando ? <><Loader2 size={13} className="animate-spin" /> Salvando...</>
+                    : orcamentoSalvo ? <><CheckCircle size={13} /> Salvo!</>
+                    : <><CheckCircle size={13} /> Salvar</>}
+                </button>
+                <button
+                  onClick={() => setDrawerAberto(false)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
             {/* Painel dentro do drawer — pb-safe garante que os botoes de baixo
                 nao fiquem atras da barra de gestos do celular */}
@@ -1680,9 +1733,11 @@ export function NovoOrcamento({
                 orcamentoSalvo={orcamentoSalvo}
                 onEquipamentosChange={setEquipamentos}
                 onItensChange={setItens}
-                onClienteNomeChange={setClienteNome}
+                onClienteNomeChange={(v) => { setClienteNome(v); setClienteVinculadoId(null) }}
                 onClienteEnderecoChange={setClienteEndereco}
                 onClienteTelefoneChange={setClienteTelefone}
+                clienteVinculadoId={clienteVinculadoId}
+                onVincularCliente={vincularCliente}
                 onModoVisualizacaoChange={setModoVisualizacao}
                 onSalvar={salvar}
                 itensExtras={itensExtras}
@@ -1707,6 +1762,91 @@ export function NovoOrcamento({
   )
 }
 
+// ─── SELETOR DE CLIENTE CADASTRADO ───────────────────────────────────────────
+// Busca clientes do cadastro central e vincula ao orçamento (preenche os campos).
+function SeletorCliente({
+  clienteVinculadoId, clienteNome, onVincular,
+}: {
+  clienteVinculadoId: string | null
+  clienteNome: string
+  onVincular: (c: { id: string; nome: string; telefone: string; endereco: string } | null) => void
+}) {
+  const [aberto, setAberto] = useState(false)
+  const [busca, setBusca] = useState('')
+  const [lista, setLista] = useState<{ id: string; nome: string; telefone: string; endereco: string; cidade: string }[]>([])
+  const [carregando, setCarregando] = useState(false)
+
+  useEffect(() => {
+    if (!aberto || lista.length > 0) return
+    setCarregando(true)
+    listarClientes()
+      .then(cs => setLista(cs.map(c => ({ id: c.id, nome: c.nome, telefone: c.telefone, endereco: c.endereco, cidade: c.cidade }))))
+      .catch(() => {})
+      .finally(() => setCarregando(false))
+  }, [aberto, lista.length])
+
+  const filtrados = lista.filter(c => {
+    const q = busca.toLowerCase()
+    return c.nome.toLowerCase().includes(q) || c.telefone.includes(busca)
+  })
+
+  if (clienteVinculadoId) {
+    return (
+      <div className="flex items-center gap-1.5 rounded-md bg-primary/10 border border-primary/30 px-2 py-1.5">
+        <UserRound size={12} className="text-primary shrink-0" />
+        <span className="text-xs text-primary font-medium truncate flex-1">Vinculado: {clienteNome}</span>
+        <button onClick={() => onVincular(null)} className="text-primary/70 hover:text-primary shrink-0" aria-label="Desvincular cliente"><X size={12} /></button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setAberto(v => !v)}
+        className="w-full flex items-center gap-1.5 rounded-md border border-dashed border-border px-2 py-1.5 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
+      >
+        <Users size={12} /> Vincular cliente cadastrado
+        <ChevronDown size={12} className="ml-auto" />
+      </button>
+      {aberto && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setAberto(false)} />
+          <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-lg bg-popover border border-border shadow-xl p-2 space-y-1.5 max-h-64 overflow-y-auto">
+            <Input
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              placeholder="Buscar por nome ou telefone..."
+              className="h-8 text-xs"
+              autoFocus
+            />
+            {carregando ? (
+              <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-primary" /></div>
+            ) : filtrados.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground text-center py-3">
+                {lista.length === 0 ? 'Nenhum cliente cadastrado ainda.' : 'Nenhum resultado.'}
+              </p>
+            ) : (
+              filtrados.slice(0, 30).map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => { onVincular(c); setAberto(false); setBusca('') }}
+                  className="w-full text-left rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                >
+                  <p className="text-xs font-medium truncate">{c.nome}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {[c.telefone, c.cidade].filter(Boolean).join(' · ') || 'Sem contato'}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ─── PAINEL LATERAL com abas (inclui Preview integrado) ──────────────────────
 interface PainelLateralProps {
   equipamentos: EquipamentoOrcamento[]
@@ -1724,6 +1864,8 @@ interface PainelLateralProps {
   onClienteNomeChange: (v: string) => void
   onClienteEnderecoChange: (v: string) => void
   onClienteTelefoneChange: (v: string) => void
+  clienteVinculadoId: string | null
+  onVincularCliente: (c: { id: string; nome: string; telefone: string; endereco: string } | null) => void
   onModoVisualizacaoChange: (v: 'venda' | 'custo') => void
   onSalvar: () => void
   itensExtras: ItemOrcamento[]
@@ -1742,6 +1884,7 @@ function PainelLateral({
   modoVisualizacao, salvando, orcamentoSalvo,
   onEquipamentosChange, onItensChange,
   onClienteNomeChange, onClienteEnderecoChange, onClienteTelefoneChange,
+  clienteVinculadoId, onVincularCliente,
   onModoVisualizacaoChange, onSalvar,
   itensExtras, onItensExtrasChange,
   desconto, onDescontoChange, onAjustarItem, onRemoverItens, irParaPreview, mobile = false,
@@ -2004,6 +2147,11 @@ function PainelLateral({
           {/* Dados do cliente */}
           <div className="p-3 border-t border-border space-y-2">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Cliente</p>
+            <SeletorCliente
+              clienteVinculadoId={clienteVinculadoId}
+              clienteNome={clienteNome}
+              onVincular={onVincularCliente}
+            />
             <Input value={clienteNome} onChange={e => onClienteNomeChange(e.target.value)} placeholder="Nome" className="h-8 text-xs" />
             <Input value={clienteTelefone} onChange={e => onClienteTelefoneChange(e.target.value)} placeholder="Telefone" className="h-8 text-xs" />
             <Input value={clienteEndereco} onChange={e => onClienteEnderecoChange(e.target.value)} placeholder="Endereco" className="h-8 text-xs" />

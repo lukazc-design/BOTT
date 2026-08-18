@@ -8,6 +8,10 @@ import { NavBottom } from '@/components/layout/nav-bottom'
 import { Dashboard } from '@/components/telas/dashboard'
 import { NovoOrcamento } from '@/components/telas/novo-orcamento'
 import { Historico } from '@/components/telas/historico'
+import { Clientes } from '@/components/telas/clientes'
+import { FluxoCaixa } from '@/components/telas/fluxo-caixa'
+import { Funcionarios } from '@/components/telas/funcionarios'
+import { TabelaPrecos } from '@/components/telas/tabela-precos'
 import { Perfil } from '@/components/telas/perfil'
 import { Admin } from '@/components/telas/admin'
 import { BannerLicenca } from '@/components/auth/banner-licenca'
@@ -16,8 +20,9 @@ import { ehAdmin, registrarAcesso, pingAtividade } from '@/lib/actions/admin'
 import { Loader2, CheckCircle2 } from 'lucide-react'
 import type { EstadoChat } from '@/components/telas/novo-orcamento'
 import type { Orcamento } from '@/lib/tipos'
+import { carregarOrcamentos } from '@/lib/storage'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'perfil' | 'admin'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'tabela-precos' | 'perfil' | 'admin'
 
 export default function Home() {
   const { data: session, isPending } = useSession()
@@ -88,10 +93,10 @@ export default function Home() {
   // ── Memória de rolagem por aba ──────────────────────────────────────────
   // Cada aba lembra onde o usuário parou. Aba nunca aberta começa no topo.
   const scrollRefs = useRef<Record<Pagina, HTMLDivElement | null>>({
-    dashboard: null, 'novo-orcamento': null, historico: null, perfil: null, admin: null,
+    dashboard: null, 'novo-orcamento': null, historico: null, clientes: null, 'fluxo-caixa': null, funcionarios: null, 'tabela-precos': null, perfil: null, admin: null,
   })
   const scrollMem = useRef<Record<Pagina, number>>({
-    dashboard: 0, 'novo-orcamento': 0, historico: 0, perfil: 0, admin: 0,
+    dashboard: 0, 'novo-orcamento': 0, historico: 0, clientes: 0, 'fluxo-caixa': 0, funcionarios: 0, 'tabela-precos': 0, perfil: 0, admin: 0,
   })
   const visitados = useRef<Set<Pagina>>(new Set())
 
@@ -165,6 +170,19 @@ export default function Home() {
     navegar('novo-orcamento')
   }, [navegar])
 
+  // Abre para edição a partir de um id (usado pela ficha do cliente).
+  // Busca o orçamento completo no espelho local; se não achar, cai no histórico.
+  const handleEditarOrcamentoPorId = useCallback((id: string) => {
+    const orc = carregarOrcamentos().find(o => o.id === id)
+    if (orc) {
+      handleEditarNoChat(orc)
+    } else {
+      setAbrirOrcId(id)
+      setAbrirOrcNonce(n => n + 1)
+      navegar('historico')
+    }
+  }, [handleEditarNoChat, navegar])
+
   // Carregando sessao
   if (isPending || !session?.user) {
     return (
@@ -196,9 +214,11 @@ export default function Home() {
           className={pagina === 'dashboard' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
         >
           <Dashboard
+            ativo={pagina === 'dashboard'}
             onNovoOrcamento={() => navegar('novo-orcamento')}
             onAbrirHistorico={() => navegar('historico')}
             onAbrirOrcamento={handleAbrirOrcamento}
+            onNavegar={navegar}
           />
         </div>
         <div
@@ -218,7 +238,35 @@ export default function Home() {
           onScroll={() => salvarScroll('historico')}
           className={pagina === 'historico' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
         >
-          <Historico onEditarNoChat={handleEditarNoChat} abrirId={abrirOrcId} abrirNonce={abrirOrcNonce} />
+          <Historico ativo={pagina === 'historico'} onEditarNoChat={handleEditarNoChat} abrirId={abrirOrcId} abrirNonce={abrirOrcNonce} />
+        </div>
+        <div
+          ref={el => { scrollRefs.current.clientes = el }}
+          onScroll={() => salvarScroll('clientes')}
+          className={pagina === 'clientes' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+        >
+          <Clientes ativo={pagina === 'clientes'} onEditarOrcamento={handleEditarOrcamentoPorId} />
+        </div>
+        <div
+          ref={el => { scrollRefs.current['fluxo-caixa'] = el }}
+          onScroll={() => salvarScroll('fluxo-caixa')}
+          className={pagina === 'fluxo-caixa' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+        >
+          <FluxoCaixa ativo={pagina === 'fluxo-caixa'} />
+        </div>
+        <div
+          ref={el => { scrollRefs.current.funcionarios = el }}
+          onScroll={() => salvarScroll('funcionarios')}
+          className={pagina === 'funcionarios' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+        >
+          <Funcionarios ativo={pagina === 'funcionarios'} />
+        </div>
+        <div
+          ref={el => { scrollRefs.current['tabela-precos'] = el }}
+          onScroll={() => salvarScroll('tabela-precos')}
+          className={pagina === 'tabela-precos' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden'}
+        >
+          <TabelaPrecos ativo={pagina === 'tabela-precos'} />
         </div>
         <div
           ref={el => { scrollRefs.current.perfil = el }}

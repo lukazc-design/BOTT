@@ -127,6 +127,28 @@ COMO CLASSIFICAR ("categoria"):
 - categoria:"material" → qualquer PEÇA/INSUMO físico (tubo, suporte, fio, disjuntor, dreno, gás, fita, canaleta, tomada).
 - categoria:"outros" → só quando não for claramente serviço nem material.
 
+EDIÇÕES CIRÚRGICAS (é aqui que o técnico mais pede coisa específica — LEIA COM ATENÇÃO):
+O técnico costuma pedir para mexer em UMA coisa só, sem querer que o resto mude. Faça EXATAMENTE o que ele pediu, nada além.
+
+1) RETIRAR APENAS UM ITEM/MATERIAL (não apaga o resto):
+   - "tira só o disjuntor", "remove apenas o dreno", "não quero o suporte" → itensExtras: [{descricao:"<palavra-chave>", _op:"remove"}]. NÃO mexa em equipamentos, NÃO use "limpar".
+   - Use acao "adicionar" (ela preserva tudo) e deixe equipamentos vazio.
+
+2) MUDAR A QUANTIDADE/PREÇO DE UM ITEM QUE JÁ EXISTE (use _op:"update", NÃO remova e recrie):
+   - "deixa 3 suportes" / "muda pra 2 metros de tubulação" / "na verdade são 5 metros" → itensExtras: [{descricao:"<palavra-chave>", quantidade:<novo total>, _op:"update"}].
+   - Para trocar só o preço: {descricao:"<palavra-chave>", precoVenda:<novo>, _op:"update"}. Mande apenas os campos que mudam.
+   - "update" acha o item pelo nome e ajusta; se não existir, ele é criado. Assim você NUNCA duplica o item.
+
+3) COLOCAR/AJUSTAR METRAGEM EM UM EQUIPAMENTO ESPECÍFICO (tubulação por aparelho):
+   - A metragem de tubulação faz parte de CADA equipamento (campo distanciaTubulacao), não é item avulso.
+   - "põe 3 metros no de 12000" / "o split da sala vai ter 6 metros de linha" / "aumenta a tubulação do de 24 pra 5m" → use acao "atualizar_orcamento" e REENVIE a lista COMPLETA de equipamentos, mudando SÓ o distanciaTubulacao do aparelho citado. Todos os outros campos e equipamentos continuam idênticos ao estado atual.
+   - Se só existe UM equipamento, aplique direto — NÃO pergunte "qual".
+   - Só pergunte (acao "perguntar") quando há vários aparelhos e o técnico não deixa claro qual, e a escolha muda o resultado.
+   - "mais 3 metros" (somar) = pegue o distanciaTubulacao atual daquele equipamento e some 3. "3 metros" (definir) = ponha 3.
+
+4) TROCAR UMA CARACTERÍSTICA DE UM EQUIPAMENTO (BTU, marca, tensão, ambiente, quantidade):
+   - Use "atualizar_orcamento" reenviando a lista completa com só aquele campo alterado no aparelho citado. Nunca zere o resto.
+
 ITENS AVULSOS — use o array itensExtras:
 - "adiciona 2 suportes" / "mais duas mão-francesa" → {descricao:"Suporte (mão-francesa)", quantidade:2, unidade:"un", precoCusto:25, precoVenda:50, categoria:"material", _op:"add"}
 - "adiciona visita técnica" → {descricao:"Visita técnica", quantidade:1, unidade:"un", precoCusto:50, precoVenda:150, categoria:"servico", _op:"add"}
@@ -208,6 +230,18 @@ Ex7 — só conversar (nada muda):
 Fala: "qual gás o split inverter usa normalmente?"
 Saída: { "acao":"conversar", "clienteNome":"", "equipamentos":[], "itensExtras":[], "mensagem":"Inverter geralmente é R-32 (alguns R-410A). Quer que eu já lance uma recarga?" }
 
+Ex8 — mudar a QUANTIDADE de um item que já existe (update, não duplica):
+Contexto: já existe "Suporte (mão-francesa)" quantidade 2. Fala: "na verdade são 3 suportes"
+Saída: { "acao":"adicionar", "clienteNome":"", "equipamentos":[], "itensExtras":[{"descricao":"suporte","quantidade":3,"_op":"update"}], "mensagem":"Ajustei pra 3 suportes." }
+
+Ex9 — colocar metragem num equipamento específico (reenviar equipamentos com só o distanciaTubulacao mudado):
+Contexto: existe 1 split Genérico 12000 (indice 1, distanciaTubulacao 4) e 1 split Genérico 24000 (indice 2, distanciaTubulacao 4). Fala: "põe 6 metros de tubulação no de 24"
+Saída: { "acao":"atualizar_orcamento", "clienteNome":"", "equipamentos":[{"marca":"Genérico","tipo":"hi-wall","btu":12000,"quantidade":1,"ambiente":"Ambiente 1","tensao":"220V","distanciaTubulacao":4},{"marca":"Genérico","tipo":"hi-wall","btu":24000,"quantidade":1,"ambiente":"Ambiente 2","tensao":"220V","distanciaTubulacao":6}], "itensExtras":[], "mensagem":"Deixei 6m de linha no de 24k." }
+
+Ex10 — único equipamento, metragem direta (NÃO pergunta):
+Contexto: existe só 1 split Genérico 9000 (distanciaTubulacao 4). Fala: "aumenta a tubulação pra 7 metros"
+Saída: { "acao":"atualizar_orcamento", "clienteNome":"", "equipamentos":[{"marca":"Genérico","tipo":"hi-wall","btu":9000,"quantidade":1,"ambiente":"Ambiente 1","tensao":"220V","distanciaTubulacao":7}], "itensExtras":[], "mensagem":"Subi a linha pra 7m." }
+
 Marcas válidas: Samsung, LG, Midea, Springer, Elgin, Electrolux, Hitachi, Fujitsu, Carrier, Brastemp, Consul, York, Komeco, Gree, Daikin, Trane.
 Tipos válidos: hi-wall, piso-teto, cassete, bi-split, tri-split, quadri-split, janela.`
 
@@ -247,7 +281,7 @@ const FORMATO_JSON = {
           precoCusto: { type: 'number' },
           precoVenda: { type: 'number' },
           categoria: { type: 'string' },
-          _op: { type: 'string', enum: ['add', 'remove'] },
+          _op: { type: 'string', enum: ['add', 'remove', 'update'] },
         },
         required: ['descricao', '_op'],
       },

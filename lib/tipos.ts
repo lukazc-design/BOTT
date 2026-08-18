@@ -1,5 +1,21 @@
 import type { TipoEquipamento } from './dados-tecnicos'
 
+// ─── RESUMO DO DASHBOARD ─────────────────────────────────────────────────────
+
+export type ResumoDashboard = {
+  totalClientes: number
+  totalFuncionarios: number
+  funcionariosAtivos: number
+  folhaMensal: number            // soma dos salários dos ativos (centavos)
+  receitasTotais: number
+  despesasTotais: number
+  saldoTotal: number
+  receitasMes: number
+  despesasMes: number
+  porMes: { mes: string; receitas: number; despesas: number }[]  // últimos 6 meses
+  topCategorias: { categoria: string; tipo: string; total: number }[]
+}
+
 // ─── PERFIL DO TÉCNICO ───────────────────────────────────────────────────────
 
 export interface PrecoMaterial {

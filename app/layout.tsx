@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { TEMA_INLINE_SCRIPT } from '@/lib/tema'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'OrçaFacil-Frio — Orçamentos de Refrigeração com IA',
+  title: 'OrçaFacil-Frio — Orçamentos de Refrigeração por Voz',
   description:
-    'Sistema inteligente de orçamentos para técnicos de refrigeração. Gere orçamentos profissionais por voz ou texto, com cálculo automático de materiais, bitolas e disjuntores.',
+    'Sistema de orçamentos para técnicos de refrigeração. Gere orçamentos profissionais por voz ou texto, com cálculo automático de materiais, bitolas e disjuntores.',
   generator: 'v0.app',
 }
 
@@ -26,7 +27,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" className="bg-background dark">
+    <html lang="pt-BR" className="bg-background dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: TEMA_INLINE_SCRIPT }} />
+      </head>
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
         {children}
         <Analytics />

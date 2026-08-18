@@ -65,12 +65,13 @@ function fmtData(iso: string) {
 
 
 interface HistoricoProps {
+  ativo?: boolean
   onEditarNoChat?: (orc: Orcamento) => void
   abrirId?: string | null
   abrirNonce?: number
 }
 
-export function Historico({ onEditarNoChat, abrirId, abrirNonce }: HistoricoProps) {
+export function Historico({ ativo, onEditarNoChat, abrirId, abrirNonce }: HistoricoProps) {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<Orcamento['status'] | 'todos'>('todos')
@@ -80,7 +81,8 @@ export function Historico({ onEditarNoChat, abrirId, abrirNonce }: HistoricoProp
   const [versaoPdf, setVersaoPdf] = useState<VersaoPdf>('cliente')
 
   const recarregar = () => setOrcamentos(carregarOrcamentos())
-  useEffect(() => { recarregar() }, [])
+  // Recarrega ao montar e sempre que a aba volta a ficar ativa
+  useEffect(() => { if (ativo !== false) recarregar() }, [ativo])
 
   // Abre direto o orçamento clicado no dashboard (recentes)
   useEffect(() => {

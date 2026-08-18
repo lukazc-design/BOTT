@@ -118,11 +118,87 @@ export const aiUsage = pgTable('ai_usage', {
   createdAt: timestamp('createdAt').notNull(),
 })
 
+// ─── OrçaFacil: Clientes (entidade central da gestão) ───────────────────────
+// Cada cliente é reaproveitável: concentra aparelhos, atendimentos e orçamentos.
+
+export const clientes = pgTable('clientes', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  nome: text('nome').notNull(),
+  telefone: text('telefone').notNull().default(''),   // principal (usado no WhatsApp/ligar)
+  telefone2: text('telefone2').notNull().default(''),
+  email: text('email').notNull().default(''),
+  endereco: text('endereco').notNull().default(''),
+  bairro: text('bairro').notNull().default(''),
+  cidade: text('cidade').notNull().default(''),
+  observacoes: text('observacoes').notNull().default(''),
+  createdAt: timestamp('createdAt').notNull(),
+  updatedAt: timestamp('updatedAt').notNull(),
+})
+
+// ─── OrçaFacil: Aparelhos instalados no cliente ─────────────────────────────
+// Base dos alertas de manutenção: cada aparelho tem intervalo e próxima data.
+
+export const aparelhos = pgTable('aparelhos', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  clienteId: text('clienteId').notNull(),
+  tipo: text('tipo').notNull().default('Split'),       // Split, Janela, Cassete, Piso-teto...
+  marca: text('marca').notNull().default(''),
+  modelo: text('modelo').notNull().default(''),
+  btu: integer('btu').notNull().default(0),
+  tensao: text('tensao').notNull().default(''),        // 110V / 220V
+  gas: text('gas').notNull().default(''),              // R410A, R32...
+  ambiente: text('ambiente').notNull().default(''),    // "Sala", "Quarto casal"...
+  dataInstalacao: timestamp('dataInstalacao'),
+  intervaloLimpezaMeses: integer('intervaloLimpezaMeses').notNull().default(6),
+  ultimaLimpeza: timestamp('ultimaLimpeza'),
+  proximaManutencao: timestamp('proximaManutencao'),
+  observacoes: text('observacoes').notNull().default(''),
+  createdAt: timestamp('createdAt').notNull(),
+  updatedAt: timestamp('updatedAt').notNull(),
+})
+
+// ─── OrçaFacil: Funcionários / ajudantes ────────────────────────────────────
+// Equipe do técnico. O salário-base e o dia de pagamento ajudam a gerar a folha.
+
+export const funcionarios = pgTable('funcionarios', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  nome: text('nome').notNull(),
+  funcao: text('funcao').notNull().default('Ajudante'), // Ajudante, Técnico, Auxiliar...
+  telefone: text('telefone').notNull().default(''),
+  salario: integer('salario').notNull().default(0),      // salário-base em centavos
+  diaPagamento: integer('diaPagamento').notNull().default(5), // dia do mês (1-31); 0 = sem fixo
+  ativo: boolean('ativo').notNull().default(true),
+  observacoes: text('observacoes').notNull().default(''),
+  createdAt: timestamp('createdAt').notNull(),
+  updatedAt: timestamp('updatedAt').notNull(),
+})
+
+// ─── OrçaFacil: Lançamentos (fluxo de caixa unificado) ──────────────────────
+// Entradas (receitas) e saídas (despesas). Pagamentos de salário viram uma
+// despesa com categoria 'salario' e funcionarioId preenchido.
+
+export const lancamentos = pgTable('lancamentos', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  tipo: text('tipo').notNull(),           // 'receita' | 'despesa'
+  categoria: text('categoria').notNull().default('outros'),
+  descricao: text('descricao').notNull().default(''),
+  valor: integer('valor').notNull().default(0), // em centavos, sempre positivo
+  data: timestamp('data').notNull(),
+  funcionarioId: text('funcionarioId'),   // preenchido quando é pagamento de salário
+  orcamentoId: text('orcamentoId'),       // preenchido quando a receita vem de um orçamento
+  createdAt: timestamp('createdAt').notNull(),
+})
+
 // ─── OrçaFacil: Orcamentos ──────────────────────────────────────────────────
 
 export const orcamentos = pgTable('orcamentos', {
   id: text('id').primaryKey(),
   userId: text('userId').notNull(),
+  clienteId: text('clienteId'), // vínculo opcional ao cadastro de clientes
   clienteNome: text('clienteNome').notNull().default(''),
   clienteEndereco: text('clienteEndereco').default(''),
   clienteTelefone: text('clienteTelefone').default(''),

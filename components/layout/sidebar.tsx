@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
-  Thermometer, FileText, History, Settings, LayoutGrid, ShieldCheck,
-  Wifi, WifiOff, Menu, X, ChevronRight, AlertCircle, CheckCircle2, Loader2, RefreshCw, LogOut,
+  Thermometer, FileText, History, Settings, LayoutGrid, ShieldCheck, Users, Wallet, HardHat, Tags,
+  Wifi, WifiOff, Menu, X, ChevronRight, AlertCircle, CheckCircle2, Loader2, RefreshCw, LogOut, Sun, Moon,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { carregarPerfil } from '@/lib/storage'
 import { signOut } from '@/lib/auth-client'
+import { obterTema, alternarTema, type Tema } from '@/lib/tema'
 
-type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'perfil' | 'admin'
+type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'tabela-precos' | 'perfil' | 'admin'
 
 interface SidebarProps {
   paginaAtiva: Pagina
@@ -33,7 +34,11 @@ interface DiagResult {
 const NAV = [
   { id: 'dashboard' as Pagina,       label: 'Geral',          icon: LayoutGrid   },
   { id: 'novo-orcamento' as Pagina,  label: 'Novo Orçamento', icon: FileText     },
+  { id: 'clientes' as Pagina,        label: 'Clientes',       icon: Users        },
   { id: 'historico' as Pagina,       label: 'Histórico',      icon: History      },
+  { id: 'fluxo-caixa' as Pagina,     label: 'Fluxo de Caixa', icon: Wallet       },
+  { id: 'funcionarios' as Pagina,    label: 'Funcionários',   icon: HardHat      },
+  { id: 'tabela-precos' as Pagina,   label: 'Tabela de Preços', icon: Tags       },
   { id: 'perfil' as Pagina,          label: 'Meu Perfil',     icon: Settings     },
 ]
 
@@ -45,6 +50,13 @@ export function Sidebar({ paginaAtiva, onNavegar, ollamaOnline, ollamaErro, olla
   const [diagCarregando, setDiagCarregando] = useState(false)
   const [diagResult, setDiagResult] = useState<DiagResult | null>(null)
   const [saindo, setSaindo] = useState(false)
+  const [tema, setTema] = useState<Tema>('dark')
+
+  useEffect(() => { setTema(obterTema()) }, [])
+
+  function trocarTema() {
+    setTema(alternarTema())
+  }
 
   async function sair() {
     setSaindo(true)
@@ -151,7 +163,7 @@ export function Sidebar({ paginaAtiva, onNavegar, ollamaOnline, ollamaErro, olla
             ) : (
               <WifiOff size={14} className="text-destructive flex-shrink-0" />
             )}
-            <span className="text-xs text-muted-foreground">IA Local (Ollama)</span>
+            <span className="text-xs text-muted-foreground">Assistente</span>
             <Badge
               variant="outline"
               onClick={() => { if (!ollamaOnline) { setMostrarDiag(!mostrarDiag) } }}
@@ -227,6 +239,16 @@ export function Sidebar({ paginaAtiva, onNavegar, ollamaOnline, ollamaErro, olla
               )}
             </div>
           )}
+
+          {/* Alternar tema claro/escuro */}
+          <button
+            onClick={trocarTema}
+            className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors mt-1"
+          >
+            {tema === 'dark'
+              ? <><Sun size={15} /> Tema claro</>
+              : <><Moon size={15} /> Tema escuro</>}
+          </button>
 
           {/* Botao Sair — encerra a sessao e volta para a tela de login */}
           <button
