@@ -32,7 +32,7 @@ export function Landing({ onEntrar }: LandingProps) {
         {/* Badge */}
         <div className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-medium mb-6">
           <Zap size={11} />
-          Orçamentos por voz — rápido e profissional
+          7 dias grátis · depois R$ 9,99/mês
         </div>
 
         {/* Logo / ícone */}
@@ -60,7 +60,7 @@ export function Landing({ onEntrar }: LandingProps) {
           <ArrowRight size={18} />
         </Button>
         <p className="relative text-xs text-muted-foreground mt-3">
-          Funciona direto no navegador
+          7 dias grátis — sem cartão · depois R$ 9,99/mês
         </p>
       </header>
 

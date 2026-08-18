@@ -260,7 +260,7 @@ export function Admin() {
             <CardMetrica
               icon={<Wallet size={18} />} cor="text-profit" titulo="Receita mensal"
               valor={brl(stats.receitaMensalBRL)}
-              legenda={`${stats.assinantesBasico + stats.assinantesPro} assinante(s) ativo(s)`}
+              legenda={`${stats.assinantesAtivos} assinante(s) ativo(s)`}
             />
             <CardMetrica
               icon={<Cpu size={18} />} cor="text-cost" titulo="Custo de IA (mês)"

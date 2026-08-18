@@ -87,17 +87,16 @@ export async function verificarAcesso(): Promise<{
       return {
         permitido: true,
         status: 'active',
-        plano: (licenca.plano as PlanoId | null) ?? 'pro',
+        plano: 'mensal',
         limiteMes: 999999,
         usoMes,
       }
     }
 
     if (licenca.status === 'active') {
-      const plano = (licenca.plano as PlanoId | null) ?? 'basico'
       return {
-        permitido: true, status: 'active', plano,
-        limiteMes: limiteOrcamentos('active', plano), usoMes,
+        permitido: true, status: 'active', plano: 'mensal',
+        limiteMes: limiteOrcamentos('active'), usoMes,
       }
     }
 
@@ -121,11 +120,11 @@ export async function verificarAcesso(): Promise<{
 }
 
 // Cria sessao de checkout Stripe para o plano escolhido (basico | pro)
-export async function criarCheckoutLicenca(planoId: PlanoId = 'basico'): Promise<{ url: string }> {
+export async function criarCheckoutLicenca(planoId: PlanoId = 'mensal'): Promise<{ url: string }> {
   const userId = await getUserId()
   const session = await auth.api.getSession({ headers: await headers() })
   const email = session?.user?.email ?? undefined
-  const plano = PLANOS[planoId] ?? PLANOS.basico
+  const plano = PLANOS[planoId] ?? PLANOS.mensal
 
   const origin =
     process.env.VERCEL_PROJECT_PRODUCTION_URL
@@ -182,7 +181,7 @@ export async function confirmarCheckout(sessionId: string): Promise<{ ok: boolea
       return { ok: false, mensagem: 'Pagamento ainda não confirmado.' }
     }
 
-    const plano = sess.metadata?.plano === 'pro' ? 'pro' : 'basico'
+    const plano = 'mensal'
     const subId = typeof sess.subscription === 'string' ? sess.subscription : null
     const custId = typeof sess.customer === 'string' ? sess.customer : null
 

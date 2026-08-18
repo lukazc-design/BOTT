@@ -2,7 +2,7 @@
 
 import {
   Mic, FileText, Users, Wallet, Tags, History, HardHat, Sparkles,
-  ArrowRight, Lightbulb,
+  ArrowRight, Lightbulb, Star,
 } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -87,6 +87,15 @@ const GUIA: Passo[] = [
     passos: [
       'Veja todos os orçamentos salvos, com status e valores.',
       'Reabra para editar, mudar o status ou exportar novamente.',
+    ],
+  },
+  {
+    icon: Star,
+    titulo: 'Como funciona o plano',
+    passos: [
+      'Você começa com 7 dias de teste grátis — sem precisar de cartão.',
+      'Depois é uma assinatura única de R$ 9,99 por mês, com até 100 orçamentos mensais.',
+      'Pode cancelar quando quiser. O acesso continua até o fim do período já pago.',
     ],
   },
 ]

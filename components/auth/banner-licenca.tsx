@@ -10,20 +10,20 @@ type InfoAcesso = Awaited<ReturnType<typeof verificarAcesso>>
 
 export function BannerLicenca() {
   const [info, setInfo] = useState<InfoAcesso | null>(null)
-  const [comprando, setComprando] = useState<'basico' | 'pro' | null>(null)
+  const [comprando, setComprando] = useState(false)
 
   useEffect(() => {
     verificarAcesso().then(setInfo).catch(() => {})
   }, [])
 
-  async function handleComprar(plano: 'basico' | 'pro') {
-    setComprando(plano)
+  async function handleComprar() {
+    setComprando(true)
     try {
-      const { url } = await criarCheckoutLicenca(plano)
+      const { url } = await criarCheckoutLicenca('mensal')
       if (window.self !== window.top) window.open(url, '_blank')
       else window.location.href = url
     } finally {
-      setComprando(null)
+      setComprando(false)
     }
   }
 
@@ -42,15 +42,9 @@ export function BannerLicenca() {
       )}>
         <span className="font-medium">
           {estourou
-            ? `Você atingiu ${info.usoMes}/${info.limiteMes} orçamentos do mês (plano ${info.plano === 'pro' ? 'Pro' : 'Básico'}).`
+            ? `Você atingiu o limite de ${info.limiteMes} orçamentos deste mês. Ele renova no mês que vem.`
             : `Faltam ${restantes} orçamentos do seu limite mensal (${info.usoMes}/${info.limiteMes}).`}
         </span>
-        {estourou && info.plano !== 'pro' && (
-          <Button size="sm" onClick={() => handleComprar('pro')} disabled={!!comprando}
-            className="h-7 px-3 text-xs gap-1.5 shrink-0 bg-amber-500 hover:bg-amber-600 text-black">
-            {comprando ? <Loader2 size={11} className="animate-spin" /> : <Star size={11} />} Upgrade Pro — R$ 30/mês · 100 orçamentos
-          </Button>
-        )}
       </div>
     )
   }
@@ -67,18 +61,14 @@ export function BannerLicenca() {
         {expirado ? <AlertTriangle size={13} className="shrink-0" /> : <Clock size={13} className="shrink-0" />}
         <span className="font-medium">
           {expirado
-            ? 'Seu teste grátis encerrou. Escolha um plano para continuar.'
+            ? 'Seu teste grátis de 7 dias encerrou. Assine para continuar usando.'
             : `Teste grátis: ${info.diasRestantes} dia${info.diasRestantes === 1 ? '' : 's'} restante${info.diasRestantes === 1 ? '' : 's'} · ${info.usoMes}/${info.limiteMes} orçamentos.`}
         </span>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <Button size="sm" onClick={() => handleComprar('basico')} disabled={!!comprando}
+      <div className="flex items-center shrink-0">
+        <Button size="sm" onClick={handleComprar} disabled={comprando}
           className="h-7 px-3 text-xs gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
-          {comprando === 'basico' ? <Loader2 size={11} className="animate-spin" /> : <Star size={11} />} R$ 15/mês <span className="opacity-70">· 30 orçamentos</span>
-        </Button>
-        <Button size="sm" onClick={() => handleComprar('pro')} disabled={!!comprando}
-          className="h-7 px-3 text-xs gap-1.5 bg-amber-500 hover:bg-amber-600 text-black">
-          {comprando === 'pro' ? <Loader2 size={11} className="animate-spin" /> : <Star size={11} />} R$ 30/mês <span className="opacity-70">· 100 orçamentos</span>
+          {comprando ? <Loader2 size={11} className="animate-spin" /> : <Star size={11} />} Assinar por R$ 9,99/mês
         </Button>
       </div>
     </div>
