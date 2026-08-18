@@ -163,7 +163,7 @@ export function Sidebar({ paginaAtiva, onNavegar, ollamaOnline, ollamaErro, olla
             ) : (
               <WifiOff size={14} className="text-destructive flex-shrink-0" />
             )}
-            <span className="text-xs text-muted-foreground">IA Local (Ollama)</span>
+            <span className="text-xs text-muted-foreground">Assistente</span>
             <Badge
               variant="outline"
               onClick={() => { if (!ollamaOnline) { setMostrarDiag(!mostrarDiag) } }}

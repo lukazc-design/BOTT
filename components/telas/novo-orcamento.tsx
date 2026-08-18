@@ -207,7 +207,7 @@ function IndicadorIALocal({ online, model, url, nuvem }: { online: boolean; mode
       >
         <Cpu size={11} />
         <span className="font-mono font-medium hidden sm:inline">{online ? model : 'Offline'}</span>
-        <span className="font-mono font-medium sm:hidden">{online ? 'IA' : 'Off'}</span>
+        <span className="font-mono font-medium sm:hidden">{online ? 'ON' : 'Off'}</span>
         {online && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />}
       </button>
       {aberto && (
@@ -219,8 +219,8 @@ function IndicadorIALocal({ online, model, url, nuvem }: { online: boolean; mode
                 <Cpu size={16} className={online ? 'text-green-400' : 'text-destructive'} />
               </div>
               <div>
-                <p className="font-semibold text-sm">{nuvem ? 'IA na nuvem (Gemini)' : 'IA rodando no seu PC'}</p>
-                <p className="text-muted-foreground text-[10px]">{nuvem ? 'Rápida e sempre online' : 'Dados 100% locais, sem internet'}</p>
+                <p className="font-semibold text-sm">{nuvem ? 'Assistente (nuvem)' : 'Assistente (local)'}</p>
+                <p className="text-muted-foreground text-[10px]">{nuvem ? 'Rápido e sempre online' : 'Dados 100% locais, sem internet'}</p>
               </div>
             </div>
             <div className="rounded-xl bg-background border border-border p-3 space-y-2">
@@ -1409,7 +1409,7 @@ export function NovoOrcamento({
         <div className="flex items-center gap-2 flex-shrink-0">
           <IndicadorIALocal
             online={isNuvem ? true : ollamaOnline}
-            model={isNuvem ? 'Gemini 2.5 Flash' : perfil.ollamaModel}
+            model={isNuvem ? 'Assistente' : perfil.ollamaModel}
             url={isNuvem ? 'Vercel AI Gateway' : perfil.ollamaUrl}
             nuvem={isNuvem}
           />
@@ -1499,7 +1499,7 @@ export function NovoOrcamento({
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
-                    <span className="text-xs text-muted-foreground ml-2 font-mono">{isNuvem ? 'Gemini 2.5 Flash' : perfil.ollamaModel}</span>
+                    <span className="text-xs text-muted-foreground ml-2 font-mono">{isNuvem ? 'Assistente' : perfil.ollamaModel}</span>
                   </div>
                 </div>
               </div>

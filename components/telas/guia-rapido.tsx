@@ -26,7 +26,7 @@ const GUIA: Passo[] = [
     destino: 'novo-orcamento',
     passos: [
       'Toque no microfone e fale naturalmente: "orçamento pro seu João, dois split de 12 mil".',
-      'A IA monta os equipamentos, materiais e a mão de obra sozinha.',
+      'O assistente monta os equipamentos, materiais e a mão de obra sozinho.',
       'Peça ajustes na conversa: "tira o disjuntor", "põe 6 metros no de 24", "deixa 3 suportes".',
       'Confira o preview e alterne entre Venda e Custo no canto superior.',
     ],
@@ -36,7 +36,7 @@ const GUIA: Passo[] = [
     titulo: 'Salvar e exportar o orçamento',
     destino: 'novo-orcamento',
     passos: [
-      'Preencha o cliente (nome, endereço e telefone) — a IA também capta isso pela fala.',
+      'Preencha o cliente (nome, endereço e telefone) — o assistente também capta isso pela fala.',
       'Toque em Salvar para guardar no Histórico.',
       'Exporte em 3 formatos: PDF para o Cliente, lista para a Loja e uso Interno.',
     ],
@@ -156,7 +156,7 @@ export function GuiaRapido({
           <div className="flex items-start gap-2 rounded-xl border border-primary/25 bg-brand-muted p-3">
             <Lightbulb size={15} className="text-primary shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground text-pretty">
-              Dica: fale com a IA como falaria com um ajudante — ela entende gírias, corrige erros de digitação
+              Dica: fale com o assistente como falaria com um ajudante — ele entende gírias, corrige erros de digitação
               e faz só o ajuste que você pediu, sem apagar o resto do orçamento.
             </p>
           </div>

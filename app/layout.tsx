@@ -7,9 +7,9 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'OrçaFacil-Frio — Orçamentos de Refrigeração com IA',
+  title: 'OrçaFacil-Frio — Orçamentos de Refrigeração por Voz',
   description:
-    'Sistema inteligente de orçamentos para técnicos de refrigeração. Gere orçamentos profissionais por voz ou texto, com cálculo automático de materiais, bitolas e disjuntores.',
+    'Sistema de orçamentos para técnicos de refrigeração. Gere orçamentos profissionais por voz ou texto, com cálculo automático de materiais, bitolas e disjuntores.',
   generator: 'v0.app',
 }
 

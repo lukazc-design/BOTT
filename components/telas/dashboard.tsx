@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import {
   TrendingUp, TrendingDown, FileText, Wallet, AlertCircle, Plus, Thermometer,
-  Sparkles, Users, HardHat, ArrowRight, PiggyBank, HelpCircle,
+  Mic, Users, HardHat, ArrowRight, PiggyBank, HelpCircle,
 } from 'lucide-react'
 import { GuiaRapido } from '@/components/telas/guia-rapido'
 import { carregarOrcamentos } from '@/lib/storage'
@@ -15,9 +15,13 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
   ChartContainer, ChartTooltip, ChartTooltipContent,
+  ChartLegend, ChartLegendContent,
   type ChartConfig,
 } from '@/components/ui/chart'
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell, Pie, PieChart } from 'recharts'
+import {
+  Bar, CartesianGrid, XAxis, YAxis, Cell, Pie, PieChart,
+  ComposedChart, Line,
+} from 'recharts'
 
 type Pagina = 'dashboard' | 'novo-orcamento' | 'historico' | 'clientes' | 'fluxo-caixa' | 'funcionarios' | 'tabela-precos' | 'perfil' | 'admin'
 
@@ -42,6 +46,7 @@ function fmtC(centavos: number) {
 const chartConfig = {
   receitas: { label: 'Receitas', color: 'var(--chart-1)' },
   despesas: { label: 'Despesas', color: 'var(--chart-2)' },
+  lucro: { label: 'Lucro', color: 'var(--chart-3)' },
 } satisfies ChartConfig
 
 interface DashboardProps {
@@ -74,7 +79,7 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
   const vagas = MAX_ORCAMENTOS - orcamentos.length
 
   const saldo = resumo?.saldoTotal ?? 0
-  const dadosMes = resumo?.porMes ?? []
+  const dadosMes = (resumo?.porMes ?? []).map(m => ({ ...m, lucro: m.receitas - m.despesas }))
   const temSerie = dadosMes.some(m => m.receitas > 0 || m.despesas > 0)
 
   // Pizza de categorias de despesa (para o técnico ver para onde vai o dinheiro)
@@ -94,7 +99,7 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
         <div className="flex items-center gap-2">
           <Button onClick={() => setGuiaAberto(true)} variant="outline" className="gap-2"><HelpCircle size={16} /> Guia</Button>
           <Button onClick={onNovoOrcamento} className="gap-2"><Plus size={16} /> Novo Orçamento</Button>
-          <Button onClick={onNovoOrcamento} className="gap-2 bg-blue-800 text-white hover:bg-blue-900"><Sparkles size={16} /> IA</Button>
+          <Button onClick={onNovoOrcamento} className="gap-2 bg-blue-800 text-white hover:bg-blue-900"><Mic size={16} /> Por voz</Button>
         </div>
       </div>
 
@@ -120,11 +125,12 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
         <MetricCard
           label="Saldo total" valor={fmtC(saldo)} icon={PiggyBank}
           cor={saldo >= 0 ? 'text-profit' : 'text-destructive'}
+          tint={saldo >= 0 ? 'bg-profit/15' : 'bg-destructive/15'}
           destaque hint={saldo >= 0 ? 'No azul' : 'No vermelho'}
         />
-        <MetricCard label="Receitas do mês" valor={fmtC(resumo?.receitasMes ?? 0)} icon={TrendingUp} cor="text-profit" />
-        <MetricCard label="Despesas do mês" valor={fmtC(resumo?.despesasMes ?? 0)} icon={TrendingDown} cor="text-cost" />
-        <MetricCard label="Folha mensal" valor={fmtC(resumo?.folhaMensal ?? 0)} icon={HardHat} cor="text-foreground" />
+        <MetricCard label="Receitas do mês" valor={fmtC(resumo?.receitasMes ?? 0)} icon={TrendingUp} cor="text-profit" tint="bg-profit/15" />
+        <MetricCard label="Despesas do mês" valor={fmtC(resumo?.despesasMes ?? 0)} icon={TrendingDown} cor="text-cost" tint="bg-cost/15" />
+        <MetricCard label="Folha mensal" valor={fmtC(resumo?.folhaMensal ?? 0)} icon={HardHat} cor="text-primary" tint="bg-primary/15" />
       </div>
 
       {/* Gráfico de receitas x despesas (6 meses) */}
@@ -139,16 +145,23 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
           </button>
         </div>
         {temSerie ? (
-          <ChartContainer config={chartConfig} className="h-[240px] w-full">
-            <BarChart data={dadosMes} barGap={4}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border" />
+          <ChartContainer config={chartConfig} className="h-[260px] w-full">
+            <ComposedChart data={dadosMes} barGap={4} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/60" />
               <XAxis dataKey="mes" tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
-              <YAxis tickLine={false} axisLine={false} width={44}
-                tickFormatter={(v: number) => `R$${Math.round(v / 100)}`} className="text-xs" />
+              <YAxis tickLine={false} axisLine={false} width={48}
+                tickFormatter={(v: number) => `R$${Math.round(v / 100 / 1000)}k`} className="text-xs" />
               <ChartTooltip content={<ChartTooltipContent formatter={(v) => fmtC(Number(v))} />} />
-              <Bar dataKey="receitas" fill="var(--color-receitas)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="despesas" fill="var(--color-despesas)" radius={[4, 4, 0, 0]} />
-            </BarChart>
+              <ChartLegend content={<ChartLegendContent />} />
+              <Bar dataKey="receitas" fill="var(--color-receitas)" radius={[4, 4, 0, 0]} maxBarSize={38} />
+              <Bar dataKey="despesas" fill="var(--color-despesas)" radius={[4, 4, 0, 0]} maxBarSize={38} />
+              <Line
+                dataKey="lucro" type="monotone"
+                stroke="var(--color-lucro)" strokeWidth={2.5}
+                dot={{ r: 3, fill: 'var(--color-lucro)' }}
+                activeDot={{ r: 5 }}
+              />
+            </ComposedChart>
           </ChartContainer>
         ) : (
           <VazioGrafico
@@ -173,7 +186,7 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
           <p className="text-xs text-muted-foreground mb-3">Despesas por categoria</p>
           {despCategorias.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <ChartContainer config={{}} className="h-[180px] w-[180px]">
+              <ChartContainer config={{}} className="h-[180px] w-[180px] shrink-0 aspect-square">
                 <PieChart>
                   <ChartTooltip content={<ChartTooltipContent nameKey="nome" formatter={(v) => fmtC(Number(v))} />} />
                   <Pie data={despCategorias} dataKey="valor" nameKey="nome" innerRadius={45} outerRadius={80} paddingAngle={2}>
@@ -244,14 +257,14 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
   )
 }
 
-function MetricCard({ label, valor, icon: Icon, cor, pequeno, destaque, hint }: {
-  label: string; valor: string; icon: React.ElementType; cor: string
+function MetricCard({ label, valor, icon: Icon, cor, tint, pequeno, destaque, hint }: {
+  label: string; valor: string; icon: React.ElementType; cor: string; tint?: string
   pequeno?: boolean; destaque?: boolean; hint?: string
 }) {
   return (
-    <div className={cn('p-4 rounded-xl border space-y-3', destaque ? 'bg-brand-muted border-primary/30' : 'bg-card border-border')}>
-      <div className={cn('w-8 h-8 rounded-lg bg-card flex items-center justify-center border border-border', cor)}>
-        <Icon size={16} />
+    <div className={cn('p-4 rounded-xl border space-y-3', destaque ? 'bg-brand-muted border-primary/40' : 'bg-card border-border')}>
+      <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center', tint ?? 'bg-muted', cor)}>
+        <Icon size={18} />
       </div>
       <div>
         <p className={cn('font-bold leading-tight', pequeno ? 'text-base' : 'text-xl', cor)}>{valor}</p>
@@ -293,7 +306,7 @@ function EmptyState({ onNovo }: { onNovo: () => void }) {
     <div className="flex flex-col items-center justify-center py-16 px-4 rounded-xl border border-dashed border-border text-center">
       <div className="w-16 h-16 rounded-full bg-brand-muted flex items-center justify-center mb-4"><FileText size={28} className="text-primary" /></div>
       <p className="text-base font-medium mb-1">Nenhum orçamento ainda</p>
-      <p className="text-sm text-muted-foreground mb-5 max-w-xs">Crie seu primeiro orçamento por voz ou texto e deixe a IA calcular tudo automaticamente.</p>
+      <p className="text-sm text-muted-foreground mb-5 max-w-xs">Crie seu primeiro orçamento por voz ou texto e o assistente calcula tudo automaticamente.</p>
       <Button onClick={onNovo} className="gap-2"><Plus size={16} /> Criar primeiro orçamento</Button>
     </div>
   )

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Save, CheckCircle, Upload, X, Palette } from 'lucide-react'
+import { Save, CheckCircle, Upload, X, Palette, FlaskConical, Loader2, AlertTriangle } from 'lucide-react'
+import { popularDemonstracao } from '@/lib/actions/demo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -91,12 +92,38 @@ export function Perfil({ onOllamaStatus }: { onOllamaStatus?: (online: boolean) 
     setTimeout(() => setSalvo(false), 2500)
   }
 
+  const [demoCarregando, setDemoCarregando] = useState(false)
+  const [demoResultado, setDemoResultado] = useState<string | null>(null)
+  const [demoErro, setDemoErro] = useState<string | null>(null)
+
+  const carregarDemo = async () => {
+    const ok = window.confirm(
+      'Isto vai SUBSTITUIR seus clientes, funcionários e lançamentos atuais por um cenário de demonstração (R$ 30.000 de faturamento e R$ 14.000 de lucro no mês). Deseja continuar?'
+    )
+    if (!ok) return
+    setDemoCarregando(true)
+    setDemoErro(null)
+    setDemoResultado(null)
+    try {
+      const r = await popularDemonstracao()
+      const fmt = (c: number) => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      setDemoResultado(
+        `Pronto! ${r.resumo.clientes} clientes, ${r.resumo.ajudantes} ajudantes, ` +
+        `faturamento ${fmt(r.resumo.receitasMes)} e lucro ${fmt(r.resumo.lucroMes)} no mês.`
+      )
+    } catch (e) {
+      setDemoErro(e instanceof Error ? e.message : 'Não foi possível carregar os dados de demonstração.')
+    } finally {
+      setDemoCarregando(false)
+    }
+  }
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Meu Perfil</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Dados da empresa, identidade visual e IA</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Dados da empresa, identidade visual e processamento</p>
         </div>
         <Button onClick={salvar} className="gap-2">
           {salvo ? <><CheckCircle size={14} /> Salvo!</> : <><Save size={14} /> Salvar Perfil</>}
@@ -267,9 +294,9 @@ export function Perfil({ onOllamaStatus }: { onOllamaStatus?: (online: boolean) 
 
         {/* Provedor de IA */}
         <div className="space-y-2 rounded-xl border border-border bg-card/50 p-4">
-          <Label className="text-xs font-semibold">Inteligência Artificial</Label>
+          <Label className="text-xs font-semibold">Processamento</Label>
           <p className="text-[11px] text-muted-foreground">
-            Escolha como a IA interpreta os pedidos. A opção na nuvem funciona para todos, sem precisar do seu PC ligado.
+            Escolha como o assistente interpreta os pedidos. A opção na nuvem funciona para todos, sem precisar do seu PC ligado.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             <button
@@ -280,7 +307,7 @@ export function Perfil({ onOllamaStatus }: { onOllamaStatus?: (online: boolean) 
                 (perfil.provedorIA ?? 'nuvem') === 'nuvem' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
               )}
             >
-              <p className="text-sm font-medium">Nuvem (Gemini)</p>
+              <p className="text-sm font-medium">Nuvem</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">Recomendado. Online 24h, rápido, sem túnel.</p>
             </button>
             <button
@@ -291,10 +318,46 @@ export function Perfil({ onOllamaStatus }: { onOllamaStatus?: (online: boolean) 
                 perfil.provedorIA === 'local' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
               )}
             >
-              <p className="text-sm font-medium">Local (Ollama)</p>
+              <p className="text-sm font-medium">Local (no seu PC)</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">Roda no seu PC via túnel. 100% offline e grátis.</p>
             </button>
           </div>
+        </div>
+
+        {/* Dados de demonstração */}
+        <div className="space-y-2 rounded-xl border border-primary/25 bg-primary/5 p-4">
+          <div className="flex items-center gap-2">
+            <FlaskConical size={15} className="text-primary" />
+            <Label className="text-xs font-semibold">Dados de demonstração</Label>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Preenche a conta com um cenário realista para testar o sistema: uma empresa com o técnico (empresário)
+            e 2 ajudantes, 30 clientes, faturamento de R$ 30.000 e lucro de R$ 14.000 no mês.
+            <span className="text-cost font-medium"> Substitui os dados atuais.</span>
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={carregarDemo}
+            disabled={demoCarregando}
+            className="gap-2 mt-1"
+          >
+            {demoCarregando
+              ? <><Loader2 size={14} className="animate-spin" /> Gerando cenário...</>
+              : <><FlaskConical size={14} /> Carregar dados de demonstração</>}
+          </Button>
+          {demoResultado && (
+            <div className="flex items-start gap-2 rounded-lg bg-profit/15 border border-profit/30 p-2.5 text-xs text-profit">
+              <CheckCircle size={14} className="mt-0.5 flex-shrink-0" />
+              <span className="text-pretty">{demoResultado}</span>
+            </div>
+          )}
+          {demoErro && (
+            <div className="flex items-start gap-2 rounded-lg bg-destructive/15 border border-destructive/30 p-2.5 text-xs text-destructive">
+              <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+              <span className="text-pretty">{demoErro}</span>
+            </div>
+          )}
         </div>
       </div>
 

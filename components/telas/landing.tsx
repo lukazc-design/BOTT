@@ -32,7 +32,7 @@ export function Landing({ onEntrar }: LandingProps) {
         {/* Badge */}
         <div className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-medium mb-6">
           <Zap size={11} />
-          IA Local — Seus dados ficam no seu PC
+          Orçamentos por voz — rápido e profissional
         </div>
 
         {/* Logo / ícone */}
@@ -48,7 +48,7 @@ export function Landing({ onEntrar }: LandingProps) {
           <span className="text-primary">-Frio</span>
         </h1>
         <p className="relative text-base sm:text-lg text-muted-foreground text-balance max-w-sm leading-relaxed mb-8">
-          Gere orçamentos profissionais de refrigeração por voz. A IA calcula materiais, bitolas e disjuntores automaticamente.
+          Gere orçamentos profissionais de refrigeração por voz. O sistema calcula materiais, bitolas e disjuntores automaticamente.
         </p>
 
         <Button
@@ -60,7 +60,7 @@ export function Landing({ onEntrar }: LandingProps) {
           <ArrowRight size={18} />
         </Button>
         <p className="relative text-xs text-muted-foreground mt-3">
-          Requer Ollama rodando no PC
+          Funciona direto no navegador
         </p>
       </header>
 
@@ -72,7 +72,7 @@ export function Landing({ onEntrar }: LandingProps) {
               icon: Mic,
               cor: 'text-primary bg-primary/10 border-primary/20',
               titulo: 'Fale e gere',
-              desc: 'Descreva a instalação por voz. A IA interpreta e monta o orçamento completo.',
+              desc: 'Descreva a instalação por voz. O sistema interpreta e monta o orçamento completo.',
             },
             {
               icon: Calculator,
@@ -89,8 +89,8 @@ export function Landing({ onEntrar }: LandingProps) {
             {
               icon: Shield,
               cor: 'text-sale bg-sale/10 border-sale/20',
-              titulo: 'Dados no seu PC',
-              desc: 'Nenhuma informação sai do seu computador. IA rodando 100% local com Ollama.',
+              titulo: 'Seus dados protegidos',
+              desc: 'Suas informações ficam seguras e sob seu controle o tempo todo.',
             },
           ].map(({ icon: Icon, cor, titulo, desc }) => (
             <div key={titulo} className={`flex items-start gap-4 p-4 rounded-2xl border bg-card`}>
@@ -126,7 +126,7 @@ export function Landing({ onEntrar }: LandingProps) {
       <div className="mt-auto px-4 pb-8">
         <div className="max-w-lg mx-auto flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <Wifi size={12} />
-          <span>Requer Ollama rodando no seu PC com modelo qwen2.5:7b ou llama3</span>
+          <span>Pronto para usar — sem instalação, direto no navegador</span>
         </div>
       </div>
 

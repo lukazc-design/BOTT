@@ -42,6 +42,12 @@
   --color-sale: var(--sale);
   --color-profit: var(--profit);
 
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -52,53 +58,63 @@
 :root {
   color-scheme: dark;
 
-  --background:   oklch(0.12 0.008 240);
-  --foreground:   oklch(0.94 0.005 240);
+  /* Fundo azul-noite (leve chroma) para não parecer "cinza morto" */
+  --background:   oklch(0.16 0.018 245);
+  --foreground:   oklch(0.97 0.004 240);
 
-  --card:         oklch(0.16 0.010 240);
-  --card-foreground: oklch(0.94 0.005 240);
+  /* Cards mais destacados do fundo — melhora a leitura */
+  --card:         oklch(0.21 0.021 245);
+  --card-foreground: oklch(0.97 0.004 240);
 
-  --popover:      oklch(0.16 0.010 240);
-  --popover-foreground: oklch(0.94 0.005 240);
+  --popover:      oklch(0.21 0.021 245);
+  --popover-foreground: oklch(0.97 0.004 240);
 
-  /* Azul ciano — identidade da marca */
-  --primary:      oklch(0.65 0.18 210);
-  --primary-foreground: oklch(0.10 0.005 240);
+  /* Azul ciano — identidade da marca (mais brilhante) */
+  --primary:      oklch(0.70 0.16 215);
+  --primary-foreground: oklch(0.14 0.02 245);
 
-  --secondary:    oklch(0.22 0.012 240);
-  --secondary-foreground: oklch(0.85 0.005 240);
+  --secondary:    oklch(0.27 0.022 245);
+  --secondary-foreground: oklch(0.92 0.004 240);
 
-  --muted:        oklch(0.20 0.010 240);
-  --muted-foreground: oklch(0.55 0.008 240);
+  --muted:        oklch(0.25 0.020 245);
+  --muted-foreground: oklch(0.70 0.012 245);
 
-  --accent:       oklch(0.22 0.012 240);
-  --accent-foreground: oklch(0.94 0.005 240);
+  --accent:       oklch(0.29 0.030 215);
+  --accent-foreground: oklch(0.97 0.004 240);
 
-  --destructive:  oklch(0.65 0.22 25);
+  --destructive:  oklch(0.68 0.21 25);
 
-  --border:       oklch(0.28 0.010 240);
-  --input:        oklch(0.22 0.012 240);
-  --ring:         oklch(0.65 0.18 210);
+  /* Bordas bem mais visíveis */
+  --border:       oklch(0.36 0.018 245);
+  --input:        oklch(0.30 0.020 245);
+  --ring:         oklch(0.70 0.16 215);
 
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
-  /* Tokens de negócio */
-  --brand:        oklch(0.65 0.18 210);
-  --brand-foreground: oklch(0.10 0.005 240);
-  --brand-muted:  oklch(0.20 0.05 210);
-  --cost:         oklch(0.72 0.18 55);    /* âmbar — modo custo */
-  --sale:         oklch(0.65 0.18 210);   /* ciano — modo venda */
-  --profit:       oklch(0.72 0.18 142);   /* verde — lucro */
+  /* Tokens de negócio (vibrantes para leitura rápida) */
+  --brand:        oklch(0.70 0.16 215);
+  --brand-foreground: oklch(0.14 0.02 245);
+  --brand-muted:  oklch(0.30 0.07 215);
+  --cost:         oklch(0.78 0.17 65);    /* âmbar — modo custo */
+  --sale:         oklch(0.72 0.15 215);   /* ciano — modo venda */
+  --profit:       oklch(0.76 0.18 150);   /* verde — lucro */
+
+  /* Paleta de gráficos — tons vivos e distintos */
+  --chart-1:      oklch(0.72 0.15 215);   /* ciano — receitas */
+  --chart-2:      oklch(0.72 0.19 35);    /* laranja/coral — despesas */
+  --chart-3:      oklch(0.76 0.18 150);   /* verde */
+  --chart-4:      oklch(0.72 0.16 300);   /* violeta */
+  --chart-5:      oklch(0.80 0.16 90);    /* amarelo */
 
   /* Sidebar */
-  --sidebar:      oklch(0.14 0.010 240);
-  --sidebar-foreground: oklch(0.85 0.005 240);
-  --sidebar-primary: oklch(0.65 0.18 210);
-  --sidebar-primary-foreground: oklch(0.10 0.005 240);
-  --sidebar-accent: oklch(0.20 0.012 240);
-  --sidebar-accent-foreground: oklch(0.85 0.005 240);
-  --sidebar-border: oklch(0.22 0.010 240);
-  --sidebar-ring: oklch(0.65 0.18 210);
+  --sidebar:      oklch(0.18 0.020 245);
+  --sidebar-foreground: oklch(0.92 0.004 240);
+  --sidebar-primary: oklch(0.70 0.16 215);
+  --sidebar-primary-foreground: oklch(0.14 0.02 245);
+  --sidebar-accent: oklch(0.27 0.025 245);
+  --sidebar-accent-foreground: oklch(0.92 0.004 240);
+  --sidebar-border: oklch(0.30 0.018 245);
+  --sidebar-ring: oklch(0.70 0.16 215);
 }
 
 /* ─── LIGHT THEME ─────────────────────────────────────────── */
@@ -138,6 +154,13 @@
   --cost:         oklch(0.60 0.18 55);
   --sale:         oklch(0.52 0.20 210);
   --profit:       oklch(0.55 0.18 142);
+
+  /* Paleta de gráficos — tons vivos e distintos (claro) */
+  --chart-1:      oklch(0.55 0.19 215);   /* ciano — receitas */
+  --chart-2:      oklch(0.62 0.21 35);    /* laranja/coral — despesas */
+  --chart-3:      oklch(0.58 0.18 150);   /* verde */
+  --chart-4:      oklch(0.55 0.20 300);   /* violeta */
+  --chart-5:      oklch(0.68 0.17 85);    /* amarelo */
 
   --sidebar:      oklch(0.99 0 0);
   --sidebar-foreground: oklch(0.20 0.010 240);
