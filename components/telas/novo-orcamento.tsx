@@ -1417,19 +1417,34 @@ export function NovoOrcamento({
             <Button
               onClick={() => setMostrarPreview(true)}
               size="sm"
+              variant="outline"
               className="gap-1.5 h-8 text-xs"
             >
               <Eye size={13} /> Visualizar
             </Button>
           )}
-          {(temOrcamento || mensagens.length > 1) && (
-            <button
-              onClick={limpar}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              title="Limpar tudo"
+          {temOrcamento && (
+            <Button
+              onClick={salvar}
+              disabled={salvando || !!orcamentoSalvo}
+              size="sm"
+              className="gap-1.5 h-8 text-xs"
             >
-              <RefreshCw size={14} />
-            </button>
+              {salvando ? <><Loader2 size={13} className="animate-spin" /> Salvando...</>
+                : orcamentoSalvo ? <><CheckCircle size={13} /> Salvo!</>
+                : <><CheckCircle size={13} /> Salvar</>}
+            </Button>
+          )}
+          {(temOrcamento || mensagens.length > 1) && (
+            <Button
+              onClick={limpar}
+              size="sm"
+              variant="ghost"
+              className="gap-1.5 h-8 text-xs text-muted-foreground hover:text-foreground"
+              title="Começar um orçamento novo do zero"
+            >
+              <RefreshCw size={13} /> Limpar conversa
+            </Button>
           )}
         </div>
       </div>
@@ -1697,25 +1712,24 @@ export function NovoOrcamento({
             <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-1 rounded-full bg-border absolute top-2 left-1/2 -translate-x-1/2" />
-                <span className="text-sm font-semibold mt-1">Detalhes do Orçamento</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={salvar}
-                  disabled={salvando}
-                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-                >
-                  {salvando ? <><Loader2 size={13} className="animate-spin" /> Salvando...</>
-                    : orcamentoSalvo ? <><CheckCircle size={13} /> Salvo!</>
-                    : <><CheckCircle size={13} /> Salvar</>}
-                </button>
                 <button
                   onClick={() => setDrawerAberto(false)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
+                  className="flex items-center gap-1 mt-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <X size={16} />
+                  <ArrowLeft size={16} /> Voltar
                 </button>
+                <span className="text-muted-foreground/40 text-sm mt-1">|</span>
+                <span className="text-sm font-semibold mt-1">Detalhes do Orçamento</span>
               </div>
+              <button
+                onClick={salvar}
+                disabled={salvando}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+              >
+                {salvando ? <><Loader2 size={13} className="animate-spin" /> Salvando...</>
+                  : orcamentoSalvo ? <><CheckCircle size={13} /> Salvo!</>
+                  : <><CheckCircle size={13} /> Salvar</>}
+              </button>
             </div>
             {/* Painel dentro do drawer — pb-safe garante que os botoes de baixo
                 nao fiquem atras da barra de gestos do celular */}
@@ -1952,7 +1966,7 @@ function PainelLateral({
     { id: 'servicos', label: 'Servicos', icon: <Wrench size={11} />, count: itensServicos.length },
     { id: 'acessorios', label: 'Acessor.', icon: <Package size={11} />, count: itensAcessorios.length },
     { id: 'eletrico', label: 'Eletrico', icon: <ZapElec size={11} />, count: itensEletrico.length },
-    { id: 'preview', label: 'Preview', icon: <Eye size={11} />, soComOrcamento: true },
+    { id: 'preview', label: 'Documento', icon: <FileText size={11} />, soComOrcamento: true },
   ]
 
   return (
@@ -2203,7 +2217,7 @@ function PainelLateral({
 
             {temOrcamento && (
               <Button onClick={() => setAba('preview')} variant="outline" className="w-full h-9 text-sm gap-2">
-                <Eye size={13} /> Visualizar Orcamento
+                <FileText size={13} /> Ver Documento
               </Button>
             )}
             <Button onClick={onSalvar} disabled={salvando || !!orcamentoSalvo} className="w-full h-9 text-sm gap-2">
