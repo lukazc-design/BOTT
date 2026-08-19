@@ -2215,16 +2215,18 @@ function PainelLateral({
               </div>
             )}
 
-            {temOrcamento && (
-              <Button onClick={() => setAba('preview')} variant="outline" className="w-full h-9 text-sm gap-2">
-                <FileText size={13} /> Ver Documento
+            <div className="flex items-center gap-2">
+              {temOrcamento && (
+                <Button onClick={() => setAba('preview')} variant="outline" className="flex-1 h-9 text-sm gap-2">
+                  <FileText size={13} /> Ver Documento
+                </Button>
+              )}
+              <Button onClick={onSalvar} disabled={salvando || !!orcamentoSalvo} className="flex-1 h-9 text-sm gap-2">
+                {salvando ? <><Loader2 size={13} className="animate-spin" /> Salvando...</>
+                  : orcamentoSalvo ? <><CheckCircle size={13} /> Salvo!</>
+                  : <><CheckCircle size={13} /> Salvar</>}
               </Button>
-            )}
-            <Button onClick={onSalvar} disabled={salvando || !!orcamentoSalvo} className="w-full h-9 text-sm gap-2">
-              {salvando ? <><Loader2 size={13} className="animate-spin" /> Salvando...</>
-                : orcamentoSalvo ? <><CheckCircle size={13} /> Salvo!</>
-                : <><CheckCircle size={13} /> Salvar Orcamento</>}
-            </Button>
+            </div>
           </div>
         </>
       )}
