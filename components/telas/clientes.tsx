@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import {
   Users, Search, Plus, Phone, MessageCircle, MapPin, Pencil, Trash2, X, Save,
   Wind, CalendarClock, FileText, Loader2, ChevronRight, AirVent, HandCoins, CircleCheck,
+  AlertTriangle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -233,6 +234,22 @@ export function Clientes({ ativo, onEditarOrcamento }: { ativo?: boolean; onEdit
             <div key={c.id} className="rounded-2xl bg-card border border-border hover:border-primary/40 transition-all overflow-hidden">
               <div className="flex items-stretch">
                 <button onClick={() => abrirFicha(c.id)} className="flex-1 text-left p-4 min-w-0">
+                  {/* Aviso de manutenção pendente, em destaque no topo do card */}
+                  {c.manutencao && (
+                    <div className={cn(
+                      'flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg text-[11px] font-semibold',
+                      c.manutencao === 'vencida'
+                        ? 'bg-destructive/10 text-destructive'
+                        : 'bg-cost/10 text-cost'
+                    )}>
+                      <AlertTriangle size={12} className="shrink-0" />
+                      {c.manutencao === 'vencida'
+                        ? `Manutenção vencida há ${Math.abs(c.manutencaoDias ?? 0)} dia${Math.abs(c.manutencaoDias ?? 0) !== 1 ? 's' : ''}`
+                        : (c.manutencaoDias ?? 0) === 0
+                          ? 'Manutenção vence hoje'
+                          : `Manutenção em ${c.manutencaoDias} dia${(c.manutencaoDias ?? 0) !== 1 ? 's' : ''}`}
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-bold truncate">{c.nome}</p>
                     <ChevronRight size={14} className="text-muted-foreground/50 shrink-0" />

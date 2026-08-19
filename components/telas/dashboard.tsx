@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react'
 import {
   TrendingUp, TrendingDown, FileText, Wallet, AlertCircle, Plus, Thermometer,
   Mic, Users, HardHat, ArrowRight, PiggyBank, HelpCircle,
+  CalendarClock, AlertTriangle, Wind, Phone,
 } from 'lucide-react'
 import { GuiaRapido } from '@/components/telas/guia-rapido'
 import { carregarOrcamentos } from '@/lib/storage'
 import { MAX_ORCAMENTOS } from '@/lib/tipos'
 import type { Orcamento, ResumoDashboard } from '@/lib/tipos'
 import { resumoDashboard } from '@/lib/actions/financeiro'
+import { panoramaManutencoes } from '@/lib/actions/clientes'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -60,6 +62,7 @@ interface DashboardProps {
 export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrcamento, onNavegar }: DashboardProps) {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
   const [resumo, setResumo] = useState<ResumoDashboard | null>(null)
+  const [manutencoes, setManutencoes] = useState<Awaited<ReturnType<typeof panoramaManutencoes>> | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [guiaAberto, setGuiaAberto] = useState(false)
 
@@ -71,6 +74,7 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
       .then(setResumo)
       .catch(() => {})
       .finally(() => setCarregando(false))
+    panoramaManutencoes().then(setManutencoes).catch(() => {})
   }, [ativo])
 
   const aprovados = orcamentos.filter(o => o.status === 'aprovado')
@@ -89,7 +93,7 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
     .map((c, i) => ({ nome: c.categoria, valor: c.total, fill: `var(--chart-${(i % 5) + 1})` }))
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6 pb-24 md:pb-6">
+    <div className="px-3 py-4 sm:p-6 max-w-6xl mx-auto space-y-5 sm:space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Cabeçalho */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -132,6 +136,9 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
         <MetricCard label="Despesas do mês" valor={fmtC(resumo?.despesasMes ?? 0)} icon={TrendingDown} cor="text-cost" tint="bg-cost/15" />
         <MetricCard label="Folha mensal" valor={fmtC(resumo?.folhaMensal ?? 0)} icon={HardHat} cor="text-primary" tint="bg-primary/15" />
       </div>
+
+      {/* Panorama de manutenções (vencidas e a vencer) */}
+      <PainelManutencoes dados={manutencoes} onVerClientes={() => onNavegar?.('clientes')} />
 
       {/* Gráfico de receitas x despesas (6 meses) */}
       <div className="rounded-xl bg-card border border-border p-4 sm:p-5">
@@ -285,6 +292,110 @@ export function Dashboard({ ativo, onNovoOrcamento, onAbrirHistorico, onAbrirOrc
 
       {carregando && !resumo && (
         <p className="text-center text-xs text-muted-foreground">Carregando resumo financeiro...</p>
+      )}
+    </div>
+  )
+}
+
+function PainelManutencoes({ dados, onVerClientes }: {
+  dados: Awaited<ReturnType<typeof panoramaManutencoes>> | null
+  onVerClientes: () => void
+}) {
+  if (!dados) return null
+
+  const { vencidas, aVencer } = dados
+  // Lista combinada: vencidas primeiro, depois a vencer; máx. 5 no cartão
+  const itens = [...vencidas, ...aVencer].slice(0, 5)
+  const temAlgo = dados.total > 0
+
+  return (
+    <div className="rounded-xl bg-card border border-border p-4 sm:p-5">
+      <div className="flex items-center justify-between mb-4 gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-brand-muted flex items-center justify-center text-primary shrink-0">
+            <CalendarClock size={16} />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold truncate">Manutenções</h2>
+            <p className="text-xs text-muted-foreground">Vencidas e a vencer nos próximos 30 dias</p>
+          </div>
+        </div>
+        <button onClick={onVerClientes} className="text-xs text-primary hover:underline flex items-center gap-1 shrink-0">
+          Clientes <ArrowRight size={12} />
+        </button>
+      </div>
+
+      {/* Contadores */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+          <div className="flex items-center gap-1.5 text-destructive">
+            <AlertTriangle size={14} />
+            <span className="text-[11px] font-medium">Vencidas</span>
+          </div>
+          <p className="text-2xl font-bold text-destructive mt-1 tabular-nums">{vencidas.length}</p>
+        </div>
+        <div className="rounded-lg border border-cost/30 bg-cost/10 p-3">
+          <div className="flex items-center gap-1.5 text-cost">
+            <CalendarClock size={14} />
+            <span className="text-[11px] font-medium">A vencer (30d)</span>
+          </div>
+          <p className="text-2xl font-bold text-cost mt-1 tabular-nums">{aVencer.length}</p>
+        </div>
+      </div>
+
+      {/* Lista das mais urgentes */}
+      {temAlgo ? (
+        <div className="space-y-2">
+          {itens.map(it => {
+            const atrasada = it.dias < 0
+            const rotulo = atrasada
+              ? `Venceu há ${Math.abs(it.dias)}d`
+              : it.dias === 0 ? 'Vence hoje' : `Em ${it.dias}d`
+            const linkWhats = it.clienteTelefone
+              ? `https://wa.me/55${it.clienteTelefone.replace(/\D/g, '')}` : undefined
+            return (
+              <div key={it.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 border border-border/50">
+                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                  atrasada ? 'bg-destructive/15 text-destructive' : 'bg-cost/15 text-cost')}>
+                  <Wind size={15} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{it.clienteNome}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {[it.tipo, it.marca, it.ambiente].filter(Boolean).join(' · ') || 'Aparelho'}
+                  </p>
+                </div>
+                <Badge variant="outline" className={cn('text-[10px] shrink-0',
+                  atrasada ? 'border-destructive/40 text-destructive' : 'border-cost/40 text-cost')}>
+                  {rotulo}
+                </Badge>
+                {linkWhats && (
+                  <a
+                    href={linkWhats} target="_blank" rel="noopener noreferrer"
+                    className="w-8 h-8 rounded-lg bg-profit/10 text-profit flex items-center justify-center hover:bg-profit/20 transition-colors shrink-0"
+                    aria-label={`WhatsApp de ${it.clienteNome}`}
+                  >
+                    <Phone size={14} />
+                  </a>
+                )}
+              </div>
+            )
+          })}
+          {dados.total > itens.length && (
+            <button onClick={onVerClientes} className="w-full text-center text-xs text-primary hover:underline pt-1">
+              Ver mais {dados.total - itens.length} em Clientes
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-6 text-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-profit/10 flex items-center justify-center">
+            <CalendarClock size={18} className="text-profit" />
+          </div>
+          <p className="text-sm text-muted-foreground text-pretty max-w-xs">
+            Nenhuma manutenção vencida ou próxima. Tudo em dia!
+          </p>
+        </div>
       )}
     </div>
   )
