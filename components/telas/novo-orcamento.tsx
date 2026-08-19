@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Mic, MicOff, Send, Loader2, Plus, Trash2,
   RefreshCw, CheckCircle, AlertCircle, ChevronDown, ChevronUp, X,
-  Bot, User, Cpu, Eye, ArrowLeft, FileText,
+  Bot, User, Cpu, ArrowLeft, FileText,
   Zap, Download, Users, Lock, ShoppingCart,
   Package, Zap as ZapElec, Settings2, Wrench,
   Store, Calculator, UserRound, TrendingUp, HandCoins,
@@ -1420,7 +1420,7 @@ export function NovoOrcamento({
               variant="outline"
               className="gap-1.5 h-8 text-xs"
             >
-              <Eye size={13} /> Visualizar
+              <FileText size={13} /> Ver Documento
             </Button>
           )}
           {temOrcamento && (
@@ -1439,8 +1439,8 @@ export function NovoOrcamento({
             <Button
               onClick={limpar}
               size="sm"
-              variant="ghost"
-              className="gap-1.5 h-8 text-xs text-muted-foreground hover:text-foreground"
+              variant="outline"
+              className="gap-1.5 h-8 text-xs border-destructive/30 text-destructive hover:bg-destructive hover:text-white transition-colors"
               title="Começar um orçamento novo do zero"
             >
               <RefreshCw size={13} /> Limpar conversa
