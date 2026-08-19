@@ -232,6 +232,7 @@ export default function Home() {
             onEstadoChange={handleEstadoChat}
             orcamentoParaEditar={orcamentoParaEditar}
             edicaoNonce={edicaoNonce}
+            onVoltar={() => navegar('dashboard')}
           />
         </div>
         <div

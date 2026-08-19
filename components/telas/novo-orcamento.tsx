@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Mic, MicOff, Send, Loader2, Plus, Trash2,
   RefreshCw, CheckCircle, AlertCircle, ChevronDown, ChevronUp, X,
-  Bot, User, Cpu, Eye, ArrowLeft, FileText,
+  Bot, User, Cpu, ArrowLeft, FileText,
   Zap, Download, Users, Lock, ShoppingCart,
   Package, Zap as ZapElec, Settings2, Wrench,
   Store, Calculator, UserRound, TrendingUp, HandCoins,
@@ -755,12 +755,14 @@ export function NovoOrcamento({
   onEstadoChange,
   orcamentoParaEditar,
   edicaoNonce,
+  onVoltar,
 }: {
   ollamaOnline: boolean
   estadoInicial?: EstadoChat | null
   onEstadoChange?: (estado: EstadoChat) => void
   orcamentoParaEditar?: Orcamento | null
   edicaoNonce?: number
+  onVoltar?: () => void
 }) {
   const perfil = carregarPerfil()
   // Provedor de IA: 'nuvem' (Gemini, padrão) ou 'local' (Ollama no PC)
@@ -1400,11 +1402,24 @@ export function NovoOrcamento({
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between pl-14 pr-4 md:px-4 py-3 border-b border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
-        <div className="min-w-0">
-          <h1 className="text-base font-bold truncate">Novo Orcamento</h1>
-          {clienteNome && (
-            <p className="text-xs text-muted-foreground truncate">{clienteNome}</p>
+        <div className="flex items-center gap-2 min-w-0">
+          {onVoltar && (
+            <Button
+              onClick={onVoltar}
+              size="sm"
+              variant="ghost"
+              className="gap-1.5 h-8 text-xs px-2 shrink-0"
+              title="Voltar para o inicio"
+            >
+              <ArrowLeft size={15} /> Voltar
+            </Button>
           )}
+          <div className="min-w-0">
+            <h1 className="text-base font-bold truncate">Novo Orcamento</h1>
+            {clienteNome && (
+              <p className="text-xs text-muted-foreground truncate">{clienteNome}</p>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <IndicadorIALocal
@@ -1420,7 +1435,7 @@ export function NovoOrcamento({
               variant="outline"
               className="gap-1.5 h-8 text-xs"
             >
-              <Eye size={13} /> Visualizar
+              <FileText size={13} /> Ver Documento
             </Button>
           )}
           {temOrcamento && (
@@ -1439,8 +1454,8 @@ export function NovoOrcamento({
             <Button
               onClick={limpar}
               size="sm"
-              variant="ghost"
-              className="gap-1.5 h-8 text-xs text-muted-foreground hover:text-foreground"
+              variant="outline"
+              className="gap-1.5 h-8 text-xs border-destructive/30 text-destructive hover:bg-destructive hover:text-white transition-colors"
               title="Começar um orçamento novo do zero"
             >
               <RefreshCw size={13} /> Limpar conversa
