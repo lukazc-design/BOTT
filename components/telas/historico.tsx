@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import {
   Trash2, Eye, CheckCircle, XCircle, Send,
   FileText, Search, Download, Pencil, Save,
-  Users, Lock, ChevronDown, X, Bot,
+  Users, Lock, ChevronDown, X, Bot, ArrowLeft,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -259,7 +259,7 @@ export function Historico({ ativo, onEditarNoChat, abrirId, abrirNonce }: Histor
               </div>
             </button>
 
-            {/* Apagar — canto superior direito, com confirmação */}
+            {/* Apagar — canto superior direito, com confirma��ão */}
             <button
               onClick={() => {
                 if (window.confirm(`Apagar o orçamento ${o.numero}? Esta ação não pode ser desfeita.`)) {
@@ -283,6 +283,13 @@ export function Historico({ ativo, onEditarNoChat, abrirId, abrirNonce }: Histor
             <>
               <DialogHeader className="px-5 pt-5 pb-0">
                 <DialogTitle className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => { setSelecionado(null); setEditando(false) }}
+                    className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mr-1"
+                  >
+                    <ArrowLeft size={15} /> Voltar
+                  </button>
+                  <span className="text-muted-foreground/40">|</span>
                   {editando ? (
                     <Input
                       value={edicao.numero ?? ''}
