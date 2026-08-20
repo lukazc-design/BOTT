@@ -61,19 +61,72 @@ export async function listarClientes() {
     .orderBy(desc(clientes.updatedAt))
 
   // Contagens por cliente (aparelhos e orçamentos)
-  const aps = await db.select({ clienteId: aparelhos.clienteId }).from(aparelhos).where(eq(aparelhos.userId, userId))
+  const aps = await db
+    .select({ clienteId: aparelhos.clienteId, proximaManutencao: aparelhos.proximaManutencao })
+    .from(aparelhos).where(eq(aparelhos.userId, userId))
   const orcs = await db.select({ clienteId: orcamentos.clienteId }).from(orcamentos).where(eq(orcamentos.userId, userId))
 
+  const agora = Date.now()
   const contaAp = new Map<string, number>()
-  aps.forEach(a => contaAp.set(a.clienteId, (contaAp.get(a.clienteId) ?? 0) + 1))
+  // Menor nº de dias até a próxima manutenção por cliente (negativo = atrasada)
+  const diasMaisUrgente = new Map<string, number>()
+  aps.forEach(a => {
+    contaAp.set(a.clienteId, (contaAp.get(a.clienteId) ?? 0) + 1)
+    if (a.proximaManutencao) {
+      const dias = Math.ceil((new Date(a.proximaManutencao).getTime() - agora) / 86400000)
+      const atual = diasMaisUrgente.get(a.clienteId)
+      if (atual === undefined || dias < atual) diasMaisUrgente.set(a.clienteId, dias)
+    }
+  })
   const contaOrc = new Map<string, number>()
   orcs.forEach(o => { if (o.clienteId) contaOrc.set(o.clienteId, (contaOrc.get(o.clienteId) ?? 0) + 1) })
 
-  return lista.map(c => ({
-    ...c,
-    qtdAparelhos: contaAp.get(c.id) ?? 0,
-    qtdOrcamentos: contaOrc.get(c.id) ?? 0,
-  }))
+  return lista.map(c => {
+    const dias = diasMaisUrgente.get(c.id)
+    // 'vencida' se já passou; 'proxima' se vence em até 30 dias; senão null
+    const manutencao: 'vencida' | 'proxima' | null =
+      dias === undefined ? null : dias < 0 ? 'vencida' : dias <= 30 ? 'proxima' : null
+    return {
+      ...c,
+      qtdAparelhos: contaAp.get(c.id) ?? 0,
+      qtdOrcamentos: contaOrc.get(c.id) ?? 0,
+      manutencao,
+      manutencaoDias: dias ?? null,
+    }
+  })
+}
+
+// Panorama de manutenções para o dashboard: aparelhos vencidos e a vencer (30 dias)
+export async function panoramaManutencoes() {
+  const userId = await getUserId()
+  const rows = await db
+    .select({
+      id: aparelhos.id,
+      clienteId: aparelhos.clienteId,
+      tipo: aparelhos.tipo,
+      marca: aparelhos.marca,
+      ambiente: aparelhos.ambiente,
+      proximaManutencao: aparelhos.proximaManutencao,
+      clienteNome: clientes.nome,
+      clienteTelefone: clientes.telefone,
+    })
+    .from(aparelhos)
+    .innerJoin(clientes, eq(aparelhos.clienteId, clientes.id))
+    .where(eq(aparelhos.userId, userId))
+
+  const agora = Date.now()
+  const itens = rows
+    .filter(r => r.proximaManutencao)
+    .map(r => {
+      const dias = Math.ceil((new Date(r.proximaManutencao as Date).getTime() - agora) / 86400000)
+      return { ...r, dias }
+    })
+    .filter(r => r.dias <= 30) // só o que interessa: vencidas ou a vencer em 30 dias
+    .sort((a, b) => a.dias - b.dias)
+
+  const vencidas = itens.filter(i => i.dias < 0)
+  const aVencer = itens.filter(i => i.dias >= 0)
+  return { vencidas, aVencer, total: itens.length }
 }
 
 // Ficha completa: dados do cliente + aparelhos + orçamentos vinculados
